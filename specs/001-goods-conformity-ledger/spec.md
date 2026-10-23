@@ -8,6 +8,16 @@
 
 **Input**: User description: "A Blockchain and Smart Contract-Based System for Immutable Recording and Automated Conformity Assessment of Incoming Goods in a Standards Organization"
 
+## Clarifications
+
+### Session 2026-10-23
+
+- Q: Who will run the ledger's network nodes? → A: The standards organization plus each accredited laboratory runs its own node.
+- Q: How will laboratories get test results into the system? → A: Both a web entry form and upload of a structured results file in an organization-published template; direct LIMS integration is out of scope for v1.
+- Q: Which languages and calendar must the user interface support? → A: Persian (primary, right-to-left) plus English; dates displayed in Jalali or Gregorian, stored in UTC.
+- Q: How much downtime can the system have, and what happens when a node is offline? → A: 99.5% availability during working hours; any single node can fail without stopping work; no committed data is lost.
+- Q: When a consignment fails assessment, what must the system record about what happens to the goods? → A: The chosen disposition (re-export, destruction, or rework then re-test) and its completion, with evidence; no enforced deadlines in v1.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Register an Incoming Consignment as a Tamper-Proof Record (Priority: P1)
@@ -158,6 +168,8 @@ decisions still cite version 1 and new assessments after the effective date use 
   is Requires Review.
 - A participant's credentials are revoked after they signed records: their past records stay
   valid; new actions by them are refused.
+- A laboratory's own node is offline: the lab can still submit results through the
+  organization's nodes, and its node resynchronizes on return.
 - The automated assessment is unavailable: assessors can record a signed manual decision,
   flagged as manual.
 - A consignment is split or partially rejected: each lot gets its own identifier linked to
@@ -192,7 +204,10 @@ decisions still cite version 1 and new assessments after the effective date use 
 - **FR-007**: System MUST maintain versioned rule sets per standard edition, each listing
   required tests, limits, units, inclusivity of limits, and clause references.
 - **FR-008**: System MUST accept test results from accredited laboratories, per sample and
-  per test, with measured value, unit, method, and test report reference.
+  per test, with measured value, unit, method, and test report reference, either through a
+  web entry form or by uploading a structured results file in the organization's published
+  template. Uploaded files MUST be validated in full before any result is recorded; a file
+  with any invalid row is rejected with a per-row error list.
 - **FR-009**: System MUST automatically evaluate submitted results against the rule set in
   effect at the consignment's arrival date and output per-test and overall verdicts
   (Conforming, Non-Conforming, Requires Review).
@@ -212,6 +227,11 @@ decisions still cite version 1 and new assessments after the effective date use 
   status and outcome of their own consignments.
 - **FR-016**: System MUST record appeals and their outcomes as new decisions linked to the
   original.
+- **FR-016a**: For each final Non-Conforming decision, System MUST record the chosen
+  disposition (re-export, destruction, or rework then re-test), the inspector who confirmed
+  its completion, the completion date, and supporting evidence. Rework MUST lead to new test
+  results and a new assessment linked to the original consignment. Consignment status MUST
+  remain "Disposition Pending" until completion is recorded.
 - **FR-017**: System MUST support a signed manual-decision path, flagged as manual, when
   automated assessment is unavailable.
 
@@ -225,6 +245,10 @@ decisions still cite version 1 and new assessments after the effective date use 
 - **FR-020**: Revoking a participant MUST block their new actions while keeping their past
   signed entries valid.
 - **FR-021**: Importers MUST see only their own consignments.
+- **FR-021a**: The ledger MUST be replicated across nodes operated by the standards
+  organization and by each accredited laboratory; no single operator MUST be able to alter
+  recorded history without detection by the other node operators. Importers and auditors
+  access through the organization's nodes and do not run nodes.
 
 **Audit and reporting**
 
@@ -234,6 +258,13 @@ decisions still cite version 1 and new assessments after the effective date use 
   independently.
 - **FR-024**: System MUST provide reports of consignments by status, product category,
   standard, importer, and period, including override counts.
+
+**Localization**
+
+- **FR-025**: All user-facing screens, notifications, and reports MUST be available in
+  Persian (default, right-to-left layout) and English, selectable per user.
+- **FR-026**: Dates MUST be displayed in the Jalali (Solar Hijri) or Gregorian calendar per
+  user preference, while all recorded timestamps remain in UTC.
 
 ### Key Entities
 
@@ -250,6 +281,8 @@ decisions still cite version 1 and new assessments after the effective date use 
 - **Assessment Verdict**: Automated outcome per test and overall; rule-set version, inputs.
 - **Decision**: Final assessor confirmation or override, justification, certificate or
   rejection reference; appeals produce new linked decisions.
+- **Disposition**: Follow-up for a Non-Conforming consignment; type (re-export, destruction,
+  rework), confirming inspector, completion date, evidence; rework links to a new assessment.
 - **Participant**: Enrolled person or organization with role(s) and status (active/revoked).
 - **Ledger Entry**: Immutable signed record of any event, linked to a consignment or rule set.
 
@@ -271,6 +304,10 @@ decisions still cite version 1 and new assessments after the effective date use 
 - **SC-007**: An inspector can register a consignment in under 5 minutes.
 - **SC-008**: Supports at least 500 consignments per day and 50 concurrent users without
   slowdown noticeable to users.
+- **SC-009**: The system is available at least 99.5% of the organization's working hours,
+  measured monthly.
+- **SC-010**: Loss of any single node causes no interruption to users and no loss of any
+  recorded entry; a node returning after an outage catches up without manual data repair.
 
 ## Assumptions
 
@@ -279,6 +316,10 @@ decisions still cite version 1 and new assessments after the effective date use 
 - Participants include internal staff (inspectors, assessors, technical officers,
   administrators, auditors), accredited external laboratories, and importers (view and
   appeal only); customs systems integration is out of scope for v1.
+- Accredited laboratories have the capacity to host and maintain one node each; customs and
+  importers do not run nodes in v1.
+- Direct integration with laboratory information management systems (LIMS) is out of scope
+  for v1; labs use the web form or the structured file template.
 - Initial scope covers goods with measurable, rule-based criteria; criteria needing purely
   expert judgment always yield Requires Review.
 - Initial rule sets cover a small set of pilot product categories chosen by the organization.
@@ -290,3 +331,5 @@ decisions still cite version 1 and new assessments after the effective date use 
   10 years unless policy states otherwise).
 - Participants have reliable network access at registration and laboratory sites.
 - Notifications to importers use the organization's existing channels (e.g., email or portal).
+- Disposition deadlines and automatic escalation are out of scope for v1; dispositions still
+  pending are visible through the status reports (FR-024).
