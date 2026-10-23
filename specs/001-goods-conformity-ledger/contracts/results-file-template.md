@@ -1,7 +1,7 @@
-# Results File Template (CSV)
+# قالب فایل نتایج (CSV)
 
-UTF-8, comma-separated, first line is the header below, exactly. Decimal separator is `.`
-(Persian or Arabic digits are rejected, to avoid ambiguity). One row per sample-test result.
+UTF-8، جداشده با ویرگول، خط نخست دقیقاً همان سرآیند زیر است. جداکنندهٔ اعشار `.` است
+(ارقام فارسی یا عربی برای پرهیز از ابهام رد می‌شوند). هر سطر برای یک نتیجهٔ آزمونِ نمونه.
 
 ```text
 sample_id,test_code,value,pass_fail,unit,method,report_document_id
@@ -9,20 +9,20 @@ sample_id,test_code,value,pass_fail,unit,method,report_document_id
 01JB3Q...,LABEL,,pass,,VISUAL,01JB3R...
 ```
 
-| Column | Required | Rule |
+| ستون | الزامی | قاعده |
 |--------|----------|------|
-| sample_id | yes | Existing sample assigned to the uploading lab |
-| test_code | yes | Exists in the consignment's rule set |
-| value | numeric tests | Decimal, max 18 significant digits |
-| pass_fail | qualitative tests | `pass` or `fail` |
-| unit | numeric tests | Rule unit or convertible by the rule set |
-| method | yes | Free text, max 100 chars |
-| report_document_id | yes | Document already uploaded for this consignment |
+| sample_id | بله | نمونهٔ موجودی که به آزمایشگاه بارگذاری‌کننده تخصیص یافته است |
+| test_code | بله | در مجموعه قواعد محموله وجود دارد |
+| value | آزمون‌های عددی | عدد اعشاری، حداکثر ۱۸ رقم معنادار |
+| pass_fail | آزمون‌های کیفی | `pass` یا `fail` |
+| unit | آزمون‌های عددی | واحد قاعده یا قابل تبدیل توسط مجموعه قواعد |
+| method | بله | متن آزاد، حداکثر ۱۰۰ نویسه |
+| report_document_id | بله | سندی که پیش‌تر برای این محموله بارگذاری شده است |
 
-## Validation
+## اعتبارسنجی
 
-- The whole file is validated before anything is submitted.
-- Any invalid row rejects the whole file. Response lists `{row, column, code, message}` for
-  every problem, in the user's language.
-- Max 5,000 rows and 5 MB per file.
-- Duplicate `(sample_id, test_code)` rows inside one file are an error.
+- کل فایل پیش از ارسال هر چیزی اعتبارسنجی می‌شود.
+- هر سطر نامعتبر موجب رد کل فایل می‌شود. پاسخ، `{row, column, code, message}` را برای
+  هر مشکل، به زبان کاربر، فهرست می‌کند.
+- حداکثر ۵٬۰۰۰ سطر و ۵ مگابایت برای هر فایل.
+- سطرهای تکراری `(sample_id, test_code)` در یک فایل خطا محسوب می‌شوند.

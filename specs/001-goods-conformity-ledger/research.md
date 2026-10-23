@@ -1,164 +1,164 @@
-# Phase 0 Research: Incoming Goods Conformity Ledger
+# پژوهش فاز 0: دفتر کل انطباق کالاهای وارداتی
 
-All Technical Context unknowns are resolved below. Format per item: Decision / Rationale /
-Alternatives considered.
+همهٔ ابهام‌های بخش Technical Context در ادامه برطرف شده‌اند. قالب هر مورد: تصمیم / دلیل /
+گزینه‌های بررسی‌شده.
 
-## R1. Ledger platform
+## R1. پلتفرم دفتر کل
 
-- **Decision**: Hyperledger Fabric 2.5 LTS, one channel `conformity`, Raft ordering service.
-- **Rationale**: Permissioned by design with organization-level membership (MSP) that maps
-  directly to "standards organization + one org per accredited lab" (Clarification Q1).
-  No cryptocurrency or gas. Endorsement policies enforce multi-party agreement in the
-  network itself (Constitution IV). 2.5 is the current long-term-support line.
-- **Alternatives considered**:
-  - Hyperledger Besu / Quorum (permissioned EVM): workable, but account-level permissioning
-    and Solidity's lack of decimals add risk for limit comparisons; org membership is weaker.
-  - Corda: point-to-point sharing conflicts with "every lab holds a full copy" for
-    tamper detection.
-  - Public chain: rejected by spec assumption and personal-data rules.
+- **تصمیم**: Hyperledger Fabric 2.5 LTS، یک کانال `conformity`، سرویس ترتیب‌دهی Raft.
+- **دلیل**: ذاتاً مجوزدار (permissioned) است و عضویت در سطح سازمان (MSP) دارد که مستقیماً
+  با «سازمان استاندارد + یک سازمان به ازای هر آزمایشگاه همکار» (Clarification Q1) منطبق است.
+  هیچ رمزارز یا gas ندارد. سیاست‌های endorsement توافق چندطرفه را در خود شبکه اعمال
+  می‌کنند (منشور، اصل IV). نسخهٔ 2.5 خط پشتیبانی بلندمدت فعلی است.
+- **گزینه‌های بررسی‌شده**:
+  - Hyperledger Besu / Quorum (EVM مجوزدار): قابل‌استفاده است، اما مجوزدهی در سطح حساب
+    و نبود اعداد اعشاری در Solidity ریسک مقایسهٔ حدود را افزایش می‌دهد؛ عضویت سازمانی نیز ضعیف‌تر است.
+  - Corda: اشتراک‌گذاری نقطه‌به‌نقطه با اصل «هر آزمایشگاه یک نسخهٔ کامل نگه می‌دارد» برای
+    تشخیص دست‌کاری در تعارض است.
+  - زنجیرهٔ عمومی: به دلیل فرض‌های مشخصات و قواعد داده شخصی رد شد.
 
-## R2. Smart contract (chaincode) language
+## R2. زبان قرارداد هوشمند (chaincode)
 
-- **Decision**: Go, using `fabric-contract-api-go` v2.
-- **Rationale**: Most mature Fabric chaincode runtime; static typing; deterministic when
-  map iteration and floats are avoided (enforced by lint rule and tests). Same language as
-  the gateway, so one toolchain.
-- **Alternatives considered**: Node.js chaincode (dynamic typing, float numbers by default);
-  Java (heavier runtime, no benefit here).
+- **تصمیم**: Go، با استفاده از `fabric-contract-api-go` v2.
+- **دلیل**: بالغ‌ترین runtime برای chaincode در Fabric؛ نوع‌دهی ایستا؛ قطعی (deterministic) است
+  به شرط پرهیز از پیمایش map و اعداد ممیز شناور (که با قاعدهٔ lint و آزمون‌ها اعمال می‌شود). همان
+  زبان gateway است، پس یک زنجیرهٔ ابزار کافی است.
+- **گزینه‌های بررسی‌شده**: chaincode با Node.js (نوع‌دهی پویا، اعداد ممیز شناور به‌طور پیش‌فرض)؛
+  Java (runtime سنگین‌تر، بدون مزیت در اینجا).
 
-## R3. Deterministic numeric comparison
+## R3. مقایسهٔ عددی قطعی (deterministic)
 
-- **Decision**: All measured values and limits are carried as decimal strings and compared
-  with `github.com/shopspring/decimal`. Floats are banned in chaincode. Unit conversion uses
-  an explicit factor table stored inside each rule set (e.g., `A -> mA = 1000`).
-- **Rationale**: Binary floats can give different rounding across nodes and misjudge exact
-  boundary values (spec edge case "result exactly on a limit"). Factors inside the versioned
-  rule set make conversion reproducible (Constitution II).
-- **Alternatives considered**: Scaled integers (error-prone per unit); float64 (rejected).
+- **تصمیم**: همهٔ مقادیر اندازه‌گیری‌شده و حدود به‌صورت رشتهٔ اعشاری حمل می‌شوند و با
+  `github.com/shopspring/decimal` مقایسه می‌شوند. اعداد ممیز شناور در chaincode ممنوع است. تبدیل واحد
+  از یک جدول ضریب صریح استفاده می‌کند که درون هر مجموعه قواعد ذخیره می‌شود (مثلاً `A -> mA = 1000`).
+- **دلیل**: اعداد ممیز شناور دودویی ممکن است در نودهای مختلف گردکردن متفاوتی داشته باشند و
+  مقادیر دقیقاً روی مرز را نادرست داوری کنند (حالت مرزی مشخصات «نتیجه دقیقاً روی حد»). قرار گرفتن
+  ضرایب درون مجموعه قواعد نسخه‌دار، تبدیل را بازتولیدپذیر می‌کند (منشور، اصل II).
+- **گزینه‌های بررسی‌شده**: اعداد صحیح مقیاس‌شده (برای هر واحد مستعد خطا)؛ float64 (رد شد).
 
-## R4. Where assessment runs
+## R4. محل اجرای ارزیابی
 
-- **Decision**: Assessment runs inside chaincode (`AssessConsignment`) using the rule-set
-  version selected by the consignment's arrival date. The verdict, inputs hash, and
-  rule-set version are written in the same transaction.
-- **Rationale**: Every endorsing peer (organization and lab) computes the verdict
-  independently; a dishonest peer's divergent result fails endorsement. Re-assessment by an
-  auditor is a read-only evaluation of the same function (FR-011, FR-023).
-- **Alternatives considered**: Off-chain rule engine with result anchored on chain —
-  rejected, the verdict would not be independently computed by other node operators.
+- **تصمیم**: ارزیابی درون chaincode (`AssessConsignment`) و با نسخه‌ای از مجموعه قواعد اجرا می‌شود
+  که بر اساس تاریخ ورود محموله انتخاب شده است. رأی، هش ورودی‌ها و نسخهٔ مجموعه قواعد
+  در همان تراکنش نوشته می‌شوند.
+- **دلیل**: هر peer تأییدکننده (سازمان و آزمایشگاه) رأی را مستقلاً محاسبه می‌کند؛ نتیجهٔ
+  متفاوت یک peer نادرست، در endorsement رد می‌شود. ارزیابی مجدد توسط ممیز، اجرای
+  فقط‌خواندنی همان تابع است (FR-011، FR-023).
+- **گزینه‌های بررسی‌شده**: موتور قواعد برون‌زنجیره با ثبت نتیجه روی زنجیره —
+  رد شد، زیرا رأی به‌طور مستقل توسط سایر گردانندگان نود محاسبه نمی‌شد.
 
-## R5. Endorsement policy
+## R5. سیاست endorsement
 
-- **Decision**: Chaincode-level policy
-  `AND('StdOrgMSP.peer', OutOf(1, 'Lab1MSP.peer', 'Lab2MSP.peer', ...))`, regenerated when
-  a lab joins. Rule-set approval additionally requires a second technical officer's
-  signature checked in chaincode.
-- **Rationale**: The organization cannot write alone; any one lab offline does not block
-  work (Clarification Q4).
-- **Alternatives considered**: `MAJORITY Endorsement` — blocks writes if several labs are
-  offline at once; organization-only endorsement defeats the purpose of lab nodes.
+- **تصمیم**: سیاست در سطح chaincode
+  `AND('StdOrgMSP.peer', OutOf(1, 'Lab1MSP.peer', 'Lab2MSP.peer', ...))` که با پیوستن هر
+  آزمایشگاه دوباره تولید می‌شود. تأیید مجموعه قواعد علاوه بر این به امضای کارشناس فنی دوم
+  نیاز دارد که در chaincode بررسی می‌شود.
+- **دلیل**: سازمان نمی‌تواند به‌تنهایی بنویسد؛ از دسترس خارج بودن هر یک از آزمایشگاه‌ها کار را
+  متوقف نمی‌کند (Clarification Q4).
+- **گزینه‌های بررسی‌شده**: `MAJORITY Endorsement` — اگر چند آزمایشگاه هم‌زمان از دسترس خارج باشند
+  نوشتن را مسدود می‌کند؛ endorsement فقط توسط سازمان، هدف نودهای آزمایشگاه را بی‌اثر می‌کند.
 
-## R6. Identity, signing, and authentication
+## R6. هویت، امضا و احراز هویت
 
-- **Decision**:
-  - Each organization (StdOrg, each lab) runs its own Fabric CA and issues one X.509
-    certificate per person, with attributes `role` and `participantId`.
-  - Chaincode authorizes every function via `cid` attribute checks (Constitution IV:
-    enforcement in contract logic).
-  - People log in to their own organization's gateway with OIDC (Keycloak 26), with
-    TOTP second factor for all roles except importers. The gateway holds each user's
-    private key encrypted in its database (wrapping key from an HSM or, in dev, a file),
-    unlocked only for that authenticated user's requests.
-  - Importers have no Fabric identity; the StdOrg gateway submits their appeals with a
-    service identity plus the importer's account ID recorded in the transaction.
-- **Rationale**: Per-person signatures on every entry (FR-003) without asking staff to
-  manage keys in the browser. Labs hold their own users' keys, so the organization cannot
-  sign as a lab.
-- **Alternatives considered**: In-browser key storage with WebCrypto (key loss and backup
-  problems for non-technical staff); one service identity per organization (loses
-  per-person signatures, rejected by FR-003).
-- **Ceiling**: Custodial keys mean a compromised gateway can sign as its users. Upgrade
-  path: HSM-resident user keys or smart-card signing.
+- **تصمیم**:
+  - هر سازمان (StdOrg و هر آزمایشگاه) Fabric CA مختص خود را اجرا می‌کند و برای هر فرد یک
+    گواهی X.509 با ویژگی‌های `role` و `participantId` صادر می‌کند.
+  - chaincode هر تابع را از طریق بررسی ویژگی‌های `cid` مجازسنجی می‌کند (منشور، اصل IV:
+    اعمال در منطق قرارداد).
+  - افراد با OIDC (Keycloak 26) به gateway سازمان خود وارد می‌شوند و برای همهٔ نقش‌ها به‌جز
+    واردکنندگان، عامل دوم TOTP الزامی است. gateway کلید خصوصی هر کاربر را به‌صورت رمزشده
+    در پایگاه دادهٔ خود نگه می‌دارد (کلید پوشاننده از HSM یا در محیط توسعه از یک فایل)
+    و فقط برای درخواست‌های همان کاربرِ احراز هویت‌شده باز می‌شود.
+  - واردکنندگان هویت Fabric ندارند؛ gateway سازمان StdOrg اعتراض‌های آنان را با یک
+    هویت سرویس ثبت می‌کند و شناسهٔ حساب واردکننده در تراکنش درج می‌شود.
+- **دلیل**: امضای فردی روی هر ورودی (FR-003) بدون آنکه کارکنان مجبور به مدیریت کلید در
+  مرورگر باشند. آزمایشگاه‌ها کلیدهای کاربران خود را نگه می‌دارند، بنابراین سازمان نمی‌تواند
+  به جای آزمایشگاه امضا کند.
+- **گزینه‌های بررسی‌شده**: ذخیرهٔ کلید در مرورگر با WebCrypto (مشکلات گم‌شدن کلید و پشتیبان‌گیری
+  برای کارکنان غیرفنی)؛ یک هویت سرویس به ازای هر سازمان (امضای فردی از دست می‌رود و
+  طبق FR-003 رد شد).
+- **محدودیت سقف**: نگهداری امانی کلیدها یعنی gateway نفوذشده می‌تواند به جای کاربرانش امضا کند. مسیر
+  ارتقا: کلیدهای کاربر مقیم در HSM یا امضا با کارت هوشمند.
 
-## R7. Off-chain storage and personal data
+## R7. ذخیره‌سازی برون‌زنجیره و داده شخصی
 
-- **Decision**: PostgreSQL 16 at the StdOrg site holds: importer personal/contact data,
-  user key material, evidence documents (`bytea`, max 25 MB per file), and the read model
-  for reports. Each lab gateway has its own PostgreSQL for its users' key material and the
-  results files it uploads. The ledger stores only IDs and SHA-256 hashes (Constitution III).
-- **Rationale**: One storage product covers all needs at pilot volume (500 consignments
-  per day ≈ a few GB per month); streaming replication covers availability.
-- **Alternatives considered**: S3-compatible object store (MinIO) — extra service not yet
-  needed. **Ceiling**: move documents to an object store if storage passes ~500 GB.
-- **Legal deletion**: deleting a document removes the bytes and submits a
-  `RecordDocumentRemoval` transaction; verification then reports "removed", not "tampered".
+- **تصمیم**: PostgreSQL 16 در سایت StdOrg موارد زیر را نگه می‌دارد: داده‌های شخصی/تماس واردکننده،
+  مواد کلید کاربران، اسناد شاهد (`bytea`، حداکثر 25 MB برای هر فایل) و مدل خواندنی
+  برای گزارش‌ها. هر gateway آزمایشگاه PostgreSQL مختص خود را برای مواد کلید کاربرانش و
+  فایل‌های نتایجی که بارگذاری می‌کند دارد. دفتر کل فقط شناسه‌ها و هش‌های SHA-256 را ذخیره می‌کند (منشور، اصل III).
+- **دلیل**: یک محصول ذخیره‌سازی همهٔ نیازها را در حجم آزمایشی پوشش می‌دهد (500 محموله
+  در روز ≈ چند GB در ماه)؛ streaming replication دسترس‌پذیری را تأمین می‌کند.
+- **گزینه‌های بررسی‌شده**: ذخیره‌ساز شیء سازگار با S3 (MinIO) — سرویسی اضافی که هنوز
+  لازم نیست. **محدودیت سقف**: اگر حجم ذخیره‌سازی از حدود 500 GB گذشت، اسناد به ذخیره‌ساز شیء منتقل شوند.
+- **حذف قانونی**: حذف یک سند بایت‌های آن را پاک می‌کند و یک تراکنش
+  `RecordDocumentRemoval` ثبت می‌کند؛ سپس راستی‌آزمایی وضعیت «removed» را گزارش می‌دهد، نه «tampered».
 
-## R8. Reporting and search (FR-024)
+## R8. گزارش‌گیری و جست‌وجو (FR-024)
 
-- **Decision**: The gateway listens to block events and projects them into PostgreSQL
-  read tables (consignments, verdicts, decisions, dispositions). Reports query those tables.
-  Audit verification always reads the ledger directly, never the projection.
-- **Rationale**: Ledger queries by period/category are slow and awkward; the projection is
-  rebuildable from the ledger at any time, so it carries no trust.
-- **Alternatives considered**: CouchDB rich queries on world state (no history, no joins).
+- **تصمیم**: gateway به رویدادهای بلوک گوش می‌دهد و آن‌ها را در جدول‌های خواندنی PostgreSQL
+  (محموله‌ها، رأی‌ها، تصمیم‌ها، تعیین تکلیف‌ها) نگاشت می‌کند. گزارش‌ها از این جدول‌ها پرس‌وجو می‌کنند.
+  راستی‌آزمایی ممیزی همیشه مستقیماً از دفتر کل می‌خواند، هرگز از این نگاشت.
+- **دلیل**: پرس‌وجوی دفتر کل بر اساس دوره/دسته کند و دشوار است؛ این نگاشت هر زمان از دفتر کل
+  قابل بازسازی است، بنابراین هیچ اعتمادی به آن لازم نیست.
+- **گزینه‌های بررسی‌شده**: پرس‌وجوهای غنی CouchDB روی world state (وضعیت جهانی) (بدون تاریخچه، بدون join).
 
-## R9. Web application, RTL, and Jalali calendar
+## R9. برنامهٔ وب، RTL و تقویم جلالی
 
-- **Decision**: React 18 + TypeScript + Vite single-page app, served by the gateway.
-  Translations via `react-i18next` with `fa` (default) and `en` bundles. Direction set by
-  `<html dir>` and CSS logical properties. Dates rendered with the native
-  `Intl.DateTimeFormat('fa-IR-u-ca-persian')` or `'en-GB'`; no calendar library.
-- **Rationale**: Native `Intl` supports the Persian calendar in all current browsers;
-  logical CSS properties handle RTL without a separate stylesheet (FR-025, FR-026).
-- **Alternatives considered**: Server-rendered pages (harder interactive forms for results
-  entry); date libraries such as moment-jalaali (unneeded).
+- **تصمیم**: برنامهٔ تک‌صفحه‌ای React 18 + TypeScript + Vite که توسط gateway ارائه می‌شود.
+  ترجمه‌ها از طریق `react-i18next` با بسته‌های `fa` (پیش‌فرض) و `en`. جهت با
+  `<html dir>` و ویژگی‌های منطقی CSS تنظیم می‌شود. تاریخ‌ها با
+  `Intl.DateTimeFormat('fa-IR-u-ca-persian')` بومی یا `'en-GB'` نمایش داده می‌شوند؛ بدون کتابخانهٔ تقویم.
+- **دلیل**: `Intl` بومی در همهٔ مرورگرهای فعلی از تقویم فارسی پشتیبانی می‌کند؛
+  ویژگی‌های منطقی CSS بدون stylesheet جداگانه RTL را مدیریت می‌کنند (FR-025، FR-026).
+- **گزینه‌های بررسی‌شده**: صفحات رندرشده در سرور (فرم‌های تعاملی ورود نتایج دشوارتر می‌شود)؛
+  کتابخانه‌های تاریخ مانند moment-jalaali (غیرضروری).
 
-## R10. Results file template (Clarification Q2)
+## R10. قالب فایل نتایج (Clarification Q2)
 
-- **Decision**: UTF-8 CSV with a fixed header, one row per sample-test result, validated in
-  full before any submission; any invalid row rejects the whole file with per-row errors.
-  Format in [contracts/results-file-template.md](contracts/results-file-template.md).
-- **Rationale**: Every LIMS and spreadsheet can export CSV; strict all-or-nothing matches
-  the spec.
-- **Alternatives considered**: XLSX (parsing ambiguity, locale number formats); JSON
-  (unfriendly for lab staff).
+- **تصمیم**: CSV با کدگذاری UTF-8 و سرآیند ثابت، یک ردیف به ازای هر نتیجهٔ آزمون نمونه، که پیش از
+  هرگونه ثبت به‌طور کامل اعتبارسنجی می‌شود؛ هر ردیف نامعتبر کل فایل را با خطاهای هر ردیف رد می‌کند.
+  قالب در [contracts/results-file-template.md](contracts/results-file-template.md).
+- **دلیل**: هر LIMS و صفحه‌گسترده‌ای می‌تواند CSV صادر کند؛ رویکرد سخت‌گیرانهٔ همه‌یا‌هیچ با
+  مشخصات منطبق است.
+- **گزینه‌های بررسی‌شده**: XLSX (ابهام در تجزیه، قالب‌های عددی وابسته به locale)؛ JSON
+  (نامناسب برای کارکنان آزمایشگاه).
 
-## R11. Notifications
+## R11. اعلان‌ها
 
-- **Decision**: Email through the organization's SMTP relay plus an in-app notification
-  list in the importer portal.
-- **Rationale**: Spec assumes existing channels; SMS gateway can be added later.
+- **تصمیم**: ایمیل از طریق SMTP relay سازمان به‌علاوهٔ فهرست اعلان‌های درون‌برنامه‌ای
+  در درگاه واردکننده.
+- **دلیل**: مشخصات کانال‌های موجود را فرض می‌کند؛ درگاه پیامک بعداً قابل افزودن است.
 
-## R12. Testing strategy
+## R12. راهبرد آزمون
 
-- **Decision**:
-  - Chaincode: Go unit tests with a mocked stub (`shimtest`-style fakes) written first for
-    every rule and access check (Constitution V); boundary, unit-mismatch, missing, and
-    conflicting-result cases are table-driven.
-  - Static analysis: `go vet`, `staticcheck`, and a custom check forbidding `float32/64`,
-    `time.Now`, `math/rand`, and map range in chaincode.
-  - Integration: gateway tests against a local 3-org Fabric network (StdOrg + 2 labs) in
-    Docker Compose, including stopping one lab peer.
-  - Web: Vitest for components; one Playwright smoke flow per user story.
-- **Rationale**: Matches the constitution's CI gate (multi-node local network).
+- **تصمیم**:
+  - chaincode: آزمون‌های واحد Go با stub شبیه‌سازی‌شده (fakeهایی به سبک `shimtest`) که برای
+    هر قاعده و هر بررسی دسترسی پیشاپیش نوشته می‌شوند (منشور، اصل V)؛ حالت‌های مرزی، عدم تطابق واحد،
+    نتیجهٔ مفقود و نتایج متعارض به‌صورت جدول‌محور (table-driven) هستند.
+  - تحلیل ایستا: `go vet`، `staticcheck` و یک بررسی سفارشی که `float32/64`،
+    `time.Now`، `math/rand` و range روی map را در chaincode ممنوع می‌کند.
+  - یکپارچه‌سازی: آزمون‌های gateway روی یک شبکهٔ محلی Fabric با 3 سازمان (StdOrg + 2 آزمایشگاه) در
+    Docker Compose، شامل متوقف‌کردن peer یکی از آزمایشگاه‌ها.
+  - وب: Vitest برای کامپوننت‌ها؛ یک جریان دود (smoke) با Playwright به ازای هر داستان کاربر.
+- **دلیل**: با دروازهٔ CI منشور (شبکهٔ محلی چندنودی) منطبق است.
 
-## R13. Observability
+## R13. مشاهده‌پذیری
 
-- **Decision**: Structured JSON logs from gateway and chaincode with `txId` and
-  `consignmentId` fields; Prometheus metrics from Fabric peers/orderers and the gateway
-  (`/metrics`); availability measured by a synthetic login + read probe every minute during
-  working hours (SC-009).
-- **Rationale**: Constitution VI requires logs correlated to transaction IDs; Fabric
-  exposes Prometheus metrics natively.
+- **تصمیم**: لاگ‌های JSON ساخت‌یافته از gateway و chaincode با فیلدهای `txId` و
+  `consignmentId`؛ متریک‌های Prometheus از peerها/orderer‌های Fabric و gateway
+  (`/metrics`)؛ دسترس‌پذیری با یک کاوشگر مصنوعی ورود + خواندن در هر دقیقه طی
+  ساعات کاری اندازه‌گیری می‌شود (SC-009).
+- **دلیل**: منشور، اصل VI لاگ‌های مرتبط با شناسهٔ تراکنش را الزامی می‌کند؛ Fabric
+  متریک‌های Prometheus را به‌صورت بومی ارائه می‌دهد.
 
-## R14. Deployment topology
+## R14. توپولوژی استقرار
 
-- **Decision**:
-  - StdOrg: 2 peers, 3 Raft orderers, 1 gateway (2 replicas behind a load balancer),
-    PostgreSQL primary + standby, Keycloak, Fabric CA.
-  - Each lab: 1 peer, 1 gateway, PostgreSQL, Keycloak realm (or StdOrg-hosted realm for
-    small labs), Fabric CA.
-  - Containers on Linux hosts; Docker Compose for dev and pilot; Kubernetes left for later.
-- **Rationale**: Survives loss of any single node (SC-010). **Ceiling**: all orderers at
-  StdOrg means the organization controls ordering; labs still detect tampering because
-  blocks are hash-chained and they hold full copies. Upgrade path: give labs orderer seats.
+- **تصمیم**:
+  - StdOrg: ‏2 peer، ‏3 orderer از نوع Raft، ‏1 gateway (2 نمونه پشت یک load balancer)،
+    PostgreSQL اصلی + آماده‌به‌کار، Keycloak، Fabric CA.
+  - هر آزمایشگاه: 1 peer، 1 gateway، PostgreSQL، realm در Keycloak (یا realm میزبانی‌شده توسط StdOrg برای
+    آزمایشگاه‌های کوچک)، Fabric CA.
+  - کانتینرها روی میزبان‌های Linux؛ Docker Compose برای توسعه و دورهٔ آزمایشی؛ Kubernetes به بعد موکول شده است.
+- **دلیل**: از دست رفتن هر نود منفرد را تحمل می‌کند (SC-010). **محدودیت سقف**: قرار داشتن همهٔ orderer‌ها در
+  StdOrg یعنی سازمان ترتیب‌دهی را کنترل می‌کند؛ آزمایشگاه‌ها همچنان دست‌کاری را تشخیص می‌دهند زیرا
+  بلوک‌ها با هش زنجیر شده‌اند و آن‌ها نسخهٔ کامل را نگه می‌دارند. مسیر ارتقا: دادن جایگاه orderer به آزمایشگاه‌ها.

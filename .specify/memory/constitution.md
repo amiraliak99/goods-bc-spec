@@ -1,146 +1,146 @@
 <!--
-Sync Impact Report
-- Version change: (template, unversioned) → 1.0.0
-- Modified principles: all template placeholders replaced (initial adoption)
-  - [PRINCIPLE_1_NAME] → I. Immutable Record of Truth
-  - [PRINCIPLE_2_NAME] → II. Deterministic, Versioned Conformity Rules
-  - [PRINCIPLE_3_NAME] → III. Minimal On-Chain Data, Anchored Off-Chain Evidence
-  - [PRINCIPLE_4_NAME] → IV. Permissioned Identity and Least Privilege
-  - [PRINCIPLE_5_NAME] → V. Smart Contract Safety (NON-NEGOTIABLE)
-- Added principles: VI. End-to-End Traceability and Auditability, VII. Simplicity and Proven Components
-- Added sections: Domain and Compliance Constraints; Development Workflow and Quality Gates
-- Removed sections: none
-- Deferred TODOs: none (ratification date set to initial adoption date 2026-10-23)
+گزارش تأثیر همگام‌سازی
+- تغییر نسخه: (قالب، بدون نسخه) → 1.0.0
+- اصول اصلاح‌شده: همهٔ جای‌نگهدارهای قالب جایگزین شدند (پذیرش اولیه)
+  - [PRINCIPLE_1_NAME] → I. ثبت تغییرناپذیر حقیقت
+  - [PRINCIPLE_2_NAME] → II. قواعد انطباق قطعی و نسخه‌بندی‌شده
+  - [PRINCIPLE_3_NAME] → III. حداقل داده روی زنجیره، شواهد خارج از زنجیره با لنگر هش
+  - [PRINCIPLE_4_NAME] → IV. هویت مجوزدار و حداقل دسترسی
+  - [PRINCIPLE_5_NAME] → V. ایمنی قرارداد هوشمند (غیرقابل مذاکره)
+- اصول افزوده‌شده: VI. ردیابی‌پذیری و ممیزی‌پذیری سرتاسری، VII. سادگی و اجزای اثبات‌شده
+- بخش‌های افزوده‌شده: محدودیت‌های حوزه و انطباق؛ گردش کار توسعه و دروازه‌های کیفیت
+- بخش‌های حذف‌شده: هیچ
+- کارهای معوق (TODO): هیچ (تاریخ تصویب برابر با تاریخ پذیرش اولیه 2026-10-23 تعیین شد)
 -->
 
-# Incoming Goods Conformity Ledger Constitution
+# منشور دفتر کل انطباق کالای وارداتی
 
-A blockchain and smart contract-based system for immutable recording and automated
-conformity assessment of incoming goods in a standards organization.
+سامانه‌ای مبتنی بر بلاک‌چین و قرارداد هوشمند برای ثبت تغییرناپذیر و ارزیابی انطباق
+خودکار کالای وارداتی در یک سازمان استاندارد.
 
-## Core Principles
+## اصول بنیادین
 
-### I. Immutable Record of Truth
+### I. ثبت تغییرناپذیر حقیقت
 
-- Every event in an incoming-goods lifecycle (registration, sampling, test result
-  submission, conformity decision, certificate issuance, rejection, appeal) MUST be written to
-  the ledger as an append-only, signed transaction.
-- Recorded transactions MUST NOT be edited or deleted. Corrections MUST be new transactions
-  that reference the record they supersede and state the reason.
-- The current state of any consignment MUST be derivable solely by replaying its ledger
-  history.
+- هر رویداد در چرخهٔ عمر کالای وارداتی (ثبت، نمونه‌برداری، ارسال نتایج آزمون،
+  تصمیم انطباق، صدور گواهی، رد، اعتراض) **باید** به‌صورت تراکنشی امضاشده و فقط‌افزودنی در
+  دفتر کل نوشته شود.
+- تراکنش‌های ثبت‌شده **نباید** ویرایش یا حذف شوند. اصلاحات **باید** تراکنش‌های جدیدی باشند
+  که به رکورد جایگزین‌شده ارجاع می‌دهند و دلیل اصلاح را بیان می‌کنند.
+- وضعیت جاری هر محموله **باید** صرفاً از طریق بازپخش تاریخچهٔ آن در دفتر کل
+  قابل استخراج باشد.
 
-**Rationale**: Conformity decisions carry legal and commercial weight; trust depends on
-records that no single party, including the operator, can silently alter.
+**دلیل**: تصمیم‌های انطباق بار حقوقی و تجاری دارند؛ اعتماد به رکوردهایی وابسته است که
+هیچ طرف واحدی، از جمله اپراتور، نتواند آن‌ها را بی‌صدا تغییر دهد.
 
-### II. Deterministic, Versioned Conformity Rules
+### II. قواعد انطباق قطعی و نسخه‌بندی‌شده
 
-- Conformity criteria (limits, tolerances, required tests, sampling plans) MUST be encoded
-  as smart contract logic or contract-readable rule sets that reference the exact standard
-  and its edition.
-- Given identical inputs and rule version, assessment MUST produce identical outcomes on
-  every node. Contracts MUST NOT depend on wall-clock time, randomness, or external calls
-  except through explicitly designated, signed oracle inputs.
-- Every decision MUST record the rule-set version that produced it. Rule changes MUST be
-  published as new versions; they MUST NOT retroactively change past decisions.
-- Manual overrides by authorized assessors are permitted only as separate, signed
-  transactions carrying a mandatory justification.
+- معیارهای انطباق (حدود، رواداری‌ها، آزمون‌های الزامی، طرح‌های نمونه‌برداری) **باید** به‌صورت
+  منطق قرارداد هوشمند یا مجموعه قواعد قابل‌خواندن توسط قرارداد کدگذاری شوند که به استاندارد
+  دقیق و ویرایش آن ارجاع می‌دهند.
+- با ورودی‌ها و نسخهٔ قواعد یکسان، ارزیابی **باید** در همهٔ نودها نتایج یکسانی تولید کند.
+  قراردادها **نباید** به زمان ساعت دیواری، تصادفی‌بودن یا فراخوانی‌های خارجی وابسته باشند،
+  مگر از طریق ورودی‌های اوراکل امضاشده که صراحتاً تعیین شده‌اند.
+- هر تصمیم **باید** نسخهٔ مجموعه قواعدی را که آن را تولید کرده است ثبت کند. تغییرات قواعد **باید**
+  به‌صورت نسخه‌های جدید منتشر شوند؛ این تغییرات **نباید** تصمیم‌های گذشته را به‌طور عطف به ماسبق تغییر دهند.
+- لغو رأی (بازنگری) دستی توسط ارزیابان مجاز تنها به‌صورت تراکنش‌های امضاشدهٔ جداگانه
+  همراه با توجیه الزامی مجاز است.
 
-**Rationale**: Automated assessment is only defensible if any decision can be reproduced
-and tied to the published standard in force at the time.
+**دلیل**: ارزیابی خودکار تنها زمانی قابل دفاع است که هر تصمیم قابل بازتولید باشد
+و به استاندارد منتشرشدهٔ لازم‌الاجرا در آن زمان مرتبط شود.
 
-### III. Minimal On-Chain Data, Anchored Off-Chain Evidence
+### III. حداقل داده روی زنجیره، شواهد خارج از زنجیره با لنگر هش
 
-- Large or sensitive artifacts (lab reports, images, invoices, personal data) MUST be stored
-  off-chain. The ledger MUST store only identifiers, cryptographic hashes (SHA-256 or
-  stronger), and the minimum fields required for assessment.
-- Any off-chain document used in a decision MUST be verifiable against its on-chain hash;
-  a hash mismatch MUST be treated as tampering and block the decision.
-- Personal data MUST NOT be written on-chain, since it can never be erased there.
+- مصنوعات حجیم یا حساس (گزارش‌های آزمایشگاه، تصاویر، فاکتورها، داده‌های شخصی) **باید** خارج از
+  زنجیره ذخیره شوند. دفتر کل **باید** تنها شناسه‌ها، هش‌های رمزنگاشتی (SHA-256 یا
+  قوی‌تر) و حداقل فیلدهای لازم برای ارزیابی را ذخیره کند.
+- هر سند خارج از زنجیره که در یک تصمیم به کار رفته است **باید** در برابر هش روی زنجیرهٔ خود قابل راستی‌آزمایی باشد؛
+  عدم تطابق هش **باید** به‌عنوان دست‌کاری تلقی شود و مانع تصمیم شود.
+- داده‌های شخصی **نباید** روی زنجیره نوشته شوند، زیرا هرگز نمی‌توان آن‌ها را از آنجا پاک کرد.
 
-**Rationale**: Keeps the ledger lean and preserves the ability to meet data-protection and
-retention obligations without breaking immutability.
+**دلیل**: دفتر کل را سبک نگه می‌دارد و توانایی انجام تعهدات حفاظت از داده و
+نگهداری را بدون شکستن تغییرناپذیری حفظ می‌کند.
 
-### IV. Permissioned Identity and Least Privilege
+### IV. هویت مجوزدار و حداقل دسترسی
 
-- The network MUST be permissioned. Every participant (importer, inspector, laboratory,
-  assessor, administrator, auditor) MUST hold a verifiable identity issued by the
-  organization's trust authority.
-- Each role MUST be limited to the contract functions it needs; enforcement MUST happen
-  in contract logic, not only in client applications.
-- No single role or node MUST be able to both submit test results and approve conformity
-  for the same consignment (segregation of duties).
-- Key revocation MUST take effect on the ledger without invalidating historical signatures.
+- شبکه **باید** مجوزدار (permissioned) باشد. هر مشارکت‌کننده (واردکننده، بازرس، آزمایشگاه،
+  ارزیاب، مدیر، ممیز) **باید** هویتی قابل راستی‌آزمایی داشته باشد که توسط مرجع اعتماد
+  سازمان صادر شده است.
+- هر نقش **باید** به توابع قراردادی که نیاز دارد محدود شود؛ اعمال این محدودیت **باید** در
+  منطق قرارداد انجام شود، نه فقط در برنامه‌های کلاینت.
+- هیچ نقش یا نود واحدی **نباید** بتواند هم نتایج آزمون را ارسال کند و هم انطباق را
+  برای همان محموله تأیید کند (تفکیک وظایف).
+- ابطال کلید **باید** در دفتر کل اعمال شود، بدون آنکه امضاهای تاریخی را بی‌اعتبار کند.
 
-**Rationale**: A standards body is accountable for who decided what; anonymous or
-over-privileged access undermines that accountability.
+**دلیل**: یک نهاد استاندارد در قبال اینکه چه کسی چه تصمیمی گرفته پاسخ‌گوست؛ دسترسی ناشناس یا
+با امتیاز بیش از حد این پاسخ‌گویی را تضعیف می‌کند.
 
-### V. Smart Contract Safety (NON-NEGOTIABLE)
+### V. ایمنی قرارداد هوشمند (غیرقابل مذاکره)
 
-- Contract code MUST be developed test-first: tests for each conformity rule and each
-  access rule are written and seen failing before implementation.
-- Every contract change MUST pass unit tests, scenario tests covering conforming,
-  non-conforming, boundary, and malicious inputs, and static analysis before deployment.
-- Contract upgrades MUST follow a documented, multi-party approved procedure, MUST preserve
-  existing ledger state, and MUST be recorded on-chain with version and approvers.
+- کد قرارداد **باید** به روش آزمون‌محور توسعه یابد: آزمون‌های هر قاعدهٔ انطباق و هر
+  قاعدهٔ دسترسی پیش از پیاده‌سازی نوشته شده و شکست آن‌ها مشاهده می‌شود.
+- هر تغییر قرارداد **باید** پیش از استقرار از آزمون‌های واحد، آزمون‌های سناریو شامل ورودی‌های منطبق،
+  نامنطبق، مرزی و مخرب، و تحلیل ایستا عبور کند.
+- ارتقای قراردادها **باید** از رویه‌ای مستند و مصوب چندطرفه پیروی کند، **باید** وضعیت
+  موجود دفتر کل را حفظ کند و **باید** همراه با نسخه و تأییدکنندگان روی زنجیره ثبت شود.
 
-**Rationale**: Deployed contract defects directly produce wrong legal decisions and are
-costly to remediate on an immutable ledger.
+**دلیل**: نقص‌های قرارداد مستقرشده مستقیماً تصمیم‌های حقوقی نادرست تولید می‌کنند و
+رفع آن‌ها در یک دفتر کل تغییرناپذیر پرهزینه است.
 
-### VI. End-to-End Traceability and Auditability
+### VI. ردیابی‌پذیری و ممیزی‌پذیری سرتاسری
 
-- Every consignment MUST be traceable from arrival to final decision through a single
-  identifier linking all its transactions and anchored evidence.
-- Auditors MUST be able to independently verify any decision (inputs, rule version,
-  signatures, evidence hashes) using read-only access, without operator assistance.
-- System components MUST emit structured logs correlated to ledger transaction IDs.
+- هر محموله **باید** از ورود تا تصمیم نهایی از طریق یک شناسهٔ واحد که همهٔ
+  تراکنش‌ها و شواهد لنگرشدهٔ آن را به هم پیوند می‌دهد قابل ردیابی باشد.
+- ممیزان **باید** بتوانند هر تصمیم را (ورودی‌ها، نسخهٔ قواعد،
+  امضاها، هش‌های شواهد) با دسترسی فقط‌خواندنی و بدون کمک اپراتور به‌طور مستقل راستی‌آزمایی کنند.
+- اجزای سامانه **باید** لاگ‌های ساخت‌یافته‌ای تولید کنند که با شناسه‌های تراکنش دفتر کل مرتبط باشند.
 
-**Rationale**: External accreditation and dispute resolution require evidence that can be
-checked by a third party.
+**دلیل**: اعتباربخشی بیرونی و حل‌وفصل اختلافات نیازمند شواهدی است که
+شخص ثالث بتواند آن را بررسی کند.
 
-### VII. Simplicity and Proven Components
+### VII. سادگی و اجزای اثبات‌شده
 
-- Use established, maintained blockchain platforms and libraries; custom cryptography or
-  consensus MUST NOT be implemented.
-- Add components, services, or abstractions only when a current requirement needs them;
-  speculative generality MUST be rejected in review.
-- Each added dependency or service MUST be justified in the implementation plan.
+- از پلتفرم‌ها و کتابخانه‌های بلاک‌چین شناخته‌شده و نگهداری‌شده استفاده شود؛ رمزنگاری یا
+  اجماع سفارشی **نباید** پیاده‌سازی شود.
+- اجزا، سرویس‌ها یا انتزاع‌ها تنها زمانی افزوده شوند که یک نیازمندی جاری به آن‌ها نیاز داشته باشد؛
+  عمومیت‌بخشی گمانه‌زنانه **باید** در بازبینی رد شود.
+- هر وابستگی یا سرویس افزوده‌شده **باید** در طرح پیاده‌سازی توجیه شود.
 
-**Rationale**: Fewer moving parts mean fewer failure points in a system whose correctness
-is legally significant.
+**دلیل**: اجزای متحرک کمتر به معنای نقاط شکست کمتر در سامانه‌ای است که درستی آن
+اهمیت حقوقی دارد.
 
-## Domain and Compliance Constraints
+## محدودیت‌های حوزه و انطباق
 
-- Assessment workflows MUST align with the organization's accredited procedures and the
-  relevant conformity assessment standards (e.g., ISO/IEC 17020 for inspection,
-  ISO/IEC 17025 for laboratory results, ISO/IEC 17065 for certification).
-- Each conformity rule MUST cite its source standard number, edition, and clause.
-- Retention periods for off-chain evidence MUST meet the organization's legal record-keeping
-  requirements; deletion of off-chain data MUST be logged on-chain by hash reference.
-- The system MUST remain usable for decision recording when automated assessment is
-  unavailable, via the signed manual-assessment path defined in Principle II.
-- All timestamps MUST be recorded in UTC; user interfaces MAY display local time.
+- گردش‌های کاری ارزیابی **باید** با رویه‌های اعتباربخشی‌شدهٔ سازمان و
+  استانداردهای مرتبط ارزیابی انطباق هم‌راستا باشند (برای مثال ISO/IEC 17020 برای بازرسی،
+  ISO/IEC 17025 برای نتایج آزمایشگاه، ISO/IEC 17065 برای صدور گواهی).
+- هر قاعدهٔ انطباق **باید** شمارهٔ استاندارد منبع، ویرایش و بند آن را ذکر کند.
+- دوره‌های نگهداری شواهد خارج از زنجیره **باید** الزامات قانونی سازمان برای نگهداری سوابق
+  را برآورده کنند؛ حذف داده‌های خارج از زنجیره **باید** با ارجاع به هش روی زنجیره ثبت شود.
+- سامانه **باید** هنگامی که ارزیابی خودکار در دسترس نیست، از طریق مسیر ارزیابی دستی امضاشده
+  که در اصل II تعریف شده است، برای ثبت تصمیم قابل استفاده بماند.
+- همهٔ برچسب‌های زمانی **باید** به UTC ثبت شوند؛ رابط‌های کاربری **می‌تواند** زمان محلی را نمایش دهند.
 
-## Development Workflow and Quality Gates
+## گردش کار توسعه و دروازه‌های کیفیت
 
-- Features follow the Spec Kit flow: specify, clarify, plan, tasks, implement. Plans MUST
-  include a Constitution Check confirming compliance with every principle above.
-- All changes MUST be reviewed by at least one person other than the author; smart contract
-  and access-control changes MUST be reviewed by two.
-- CI MUST run unit, contract scenario, and integration tests against a local multi-node test
-  network; failing gates block merge.
-- Release notes MUST list any rule-set or contract version changes and their effective dates.
+- ویژگی‌ها از جریان Spec Kit پیروی می‌کنند: specify، clarify، plan، tasks، implement. طرح‌ها **باید**
+  شامل یک بررسی منشور (Constitution Check) باشند که انطباق با همهٔ اصول فوق را تأیید کند.
+- همهٔ تغییرات **باید** دست‌کم توسط یک نفر غیر از نویسنده بازبینی شوند؛ تغییرات قرارداد هوشمند
+  و کنترل دسترسی **باید** توسط دو نفر بازبینی شوند.
+- CI **باید** آزمون‌های واحد، سناریوی قرارداد و یکپارچگی را روی یک شبکهٔ آزمون محلی چندنودی
+  اجرا کند؛ دروازه‌های ناموفق مانع ادغام می‌شوند.
+- یادداشت‌های انتشار **باید** هرگونه تغییر نسخهٔ مجموعه قواعد یا قرارداد و تاریخ‌های اجرای آن‌ها را فهرست کنند.
 
-## Governance
+## حاکمیت
 
-- This constitution supersedes other project practices. Conflicts are resolved in its favor.
-- Amendments require a written proposal stating the change, rationale, and migration impact,
-  approval by the project lead and a representative of the conformity assessment
-  department, and an updated version line below.
-- Versioning follows semantic versioning: MAJOR for removing or redefining a principle,
-  MINOR for adding a principle or materially expanding guidance, PATCH for clarifications.
-- Every plan and code review MUST verify compliance. Any deviation MUST be recorded in the
-  plan's Complexity Tracking section with justification and the simpler alternative rejected.
-- Compliance is reviewed at each release and at least once per year.
+- این منشور بر سایر رویه‌های پروژه برتری دارد. تعارض‌ها به نفع آن حل می‌شوند.
+- اصلاحات نیازمند پیشنهادی مکتوب شامل تغییر، دلیل و تأثیر مهاجرت،
+  تأیید رهبر پروژه و نماینده‌ای از واحد ارزیابی
+  انطباق، و یک سطر نسخهٔ به‌روزشده در زیر است.
+- نسخه‌بندی از نسخه‌بندی معنایی پیروی می‌کند: MAJOR برای حذف یا بازتعریف یک اصل،
+  MINOR برای افزودن یک اصل یا گسترش اساسی راهنمایی، PATCH برای شفاف‌سازی‌ها.
+- هر بازبینی طرح و کد **باید** انطباق را راستی‌آزمایی کند. هرگونه انحراف **باید** در بخش
+  ردیابی پیچیدگی (Complexity Tracking) طرح همراه با توجیه و جایگزین ساده‌تر ردشده ثبت شود.
+- انطباق در هر انتشار و دست‌کم یک بار در سال بازبینی می‌شود.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-23 | **Last Amended**: 2026-10-23
+**نسخه**: 1.0.0 | **تصویب**: 2026-10-23 | **آخرین اصلاح**: 2026-10-23

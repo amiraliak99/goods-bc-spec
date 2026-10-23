@@ -1,83 +1,83 @@
-# Implementation Plan: Incoming Goods Conformity Ledger
+# طرح پیاده‌سازی: دفتر کل انطباق کالای وارداتی
 
-**Branch**: `001-goods-conformity-ledger` | **Date**: 2026-10-23 | **Spec**: [spec.md](spec.md)
+**شاخه**: `001-goods-conformity-ledger` | **تاریخ**: 2026-10-23 | **مشخصات**: [spec.md](spec.md)
 
-**Input**: Feature specification from `/specs/001-goods-conformity-ledger/spec.md`
+**ورودی**: مشخصات ویژگی از `/specs/001-goods-conformity-ledger/spec.md`
 
-## Summary
+## خلاصه
 
-A permissioned ledger shared by the standards organization (StdOrg) and each accredited
-lab records every step of an incoming consignment's life as signed, append-only
-transactions. Chaincode holds versioned conformity rule sets and computes verdicts
-deterministically on every endorsing peer, so neither the organization nor a lab can
-fake an outcome alone. A Go gateway per organization gives staff, labs, importers, and
-auditors a REST API and a Persian/English web app, keeps personal data and documents
-off-chain (hash-anchored), and projects ledger events into a read model for reports.
-Details: [research.md](research.md).
+یک دفتر کل مجوزدار که میان سازمان استاندارد (StdOrg) و هر آزمایشگاه اعتباربخشی‌شده
+مشترک است، هر مرحله از چرخهٔ عمر یک محمولهٔ وارداتی را به‌صورت تراکنش‌های امضاشده و فقط‌افزودنی
+ثبت می‌کند. chaincode مجموعه قواعد انطباق نسخه‌بندی‌شده را نگه می‌دارد و رأی‌ها را
+به‌صورت قطعی در هر peer تأییدکننده (endorsing) محاسبه می‌کند، بنابراین نه سازمان و نه یک آزمایشگاه
+نمی‌تواند به‌تنهایی نتیجه‌ای جعلی ایجاد کند. یک gateway مبتنی بر Go برای هر سازمان، یک REST API و یک برنامهٔ وب فارسی/انگلیسی
+در اختیار کارکنان، آزمایشگاه‌ها، واردکنندگان و ممیزان قرار می‌دهد، داده‌های شخصی و اسناد را
+خارج از زنجیره (با لنگر هش) نگه می‌دارد و رویدادهای دفتر کل را برای گزارش‌ها در یک مدل خواندنی بازتاب می‌دهد.
+جزئیات: [research.md](research.md).
 
-## Technical Context
+## زمینهٔ فنی
 
-**Language/Version**: Go 1.23 (chaincode + gateway); TypeScript 5 (web)
+**زبان/نسخه**: Go 1.23 (chaincode + gateway)؛ TypeScript 5 (وب)
 
-**Primary Dependencies**: Hyperledger Fabric 2.5 LTS (peers, Raft orderers, Fabric CA),
-`fabric-contract-api-go` v2, `fabric-gateway` Go SDK, `shopspring/decimal`, Keycloak 26
-(OIDC), React 18 + Vite + `react-i18next`
+**وابستگی‌های اصلی**: Hyperledger Fabric 2.5 LTS (peerها، ordererهای Raft، Fabric CA)،
+`fabric-contract-api-go` v2، `fabric-gateway` Go SDK، `shopspring/decimal`، Keycloak 26
+(OIDC)، React 18 + Vite + `react-i18next`
 
-**Storage**: Fabric ledger (on-chain, LevelDB state); PostgreSQL 16 off-chain (personal
-data, documents ≤ 25 MB, encrypted user keys, read model)
+**ذخیره‌سازی**: دفتر کل Fabric (روی زنجیره، وضعیت LevelDB)؛ PostgreSQL 16 خارج از زنجیره (داده‌های
+شخصی، اسناد ≤ 25 MB، کلیدهای رمزشدهٔ کاربران، مدل خواندنی)
 
-**Testing**: `go test` (chaincode unit with fake stub, gateway), integration tests against
-a local 3-org Fabric network in Docker Compose, Vitest, Playwright
+**آزمون**: `go test` (آزمون واحد chaincode با stub جعلی، gateway)، آزمون‌های یکپارچگی روی
+یک شبکهٔ محلی Fabric سه‌سازمانی در Docker Compose، Vitest، Playwright
 
-**Target Platform**: Linux servers in containers (Docker Compose for dev/pilot); evergreen
-desktop browsers
+**پلتفرم هدف**: سرورهای Linux در کانتینرها (Docker Compose برای توسعه/پایلوت)؛ مرورگرهای
+دسکتاپ همیشه‌به‌روز
 
-**Project Type**: Web service + chaincode + web SPA
+**نوع پروژه**: سرویس وب + chaincode + SPA وب
 
-**Performance Goals**: Verdict < 1 min after complete results for 95% of consignments
-(SC-002); 500 consignments/day, 50 concurrent users (SC-008); registration form usable in
-< 5 min (SC-007)
+**اهداف کارایی**: رأی در کمتر از 1 دقیقه پس از تکمیل نتایج برای 95% محموله‌ها
+(SC-002)؛ 500 محموله در روز، 50 کاربر هم‌زمان (SC-008)؛ فرم ثبت قابل تکمیل در
+کمتر از 5 دقیقه (SC-007)
 
-**Constraints**: 99.5% availability in working hours (SC-009); survive loss of any single
-node without data loss (SC-010); deterministic chaincode (no floats/clock/randomness);
-no personal data on chain; Persian RTL default + English; Jalali/Gregorian display, UTC
-storage
+**محدودیت‌ها**: دسترس‌پذیری 99.5% در ساعات کاری (SC-009)؛ تحمل از دست رفتن هر
+نود واحد بدون از دست رفتن داده (SC-010)؛ chaincode قطعی (بدون اعداد اعشاری شناور/ساعت/تصادفی‌بودن)؛
+بدون داده‌های شخصی روی زنجیره؛ پیش‌فرض فارسی RTL + انگلیسی؛ نمایش جلالی/میلادی، ذخیره‌سازی
+به UTC
 
-**Scale/Scope**: Pilot with 1 StdOrg + 2–10 labs; ~180k consignments/year; ~10 rule sets
-initially; ~25 screens
+**مقیاس/دامنه**: پایلوت با 1 StdOrg + 2–10 آزمایشگاه؛ حدود 180 هزار محموله در سال؛ در ابتدا حدود 10 مجموعه
+قواعد؛ حدود 25 صفحه
 
-## Constitution Check
+## بررسی منشور
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+*دروازه: **باید** پیش از پژوهش فاز 0 قبول شود. پس از طراحی فاز 1 دوباره بررسی شود.*
 
-| Principle | How the design complies | Status |
+| اصل | نحوهٔ انطباق طراحی | وضعیت |
 |-----------|------------------------|--------|
-| I. Immutable Record of Truth | All lifecycle events are Fabric transactions; corrections are new transactions (`CorrectConsignment`); state is derivable from key history | Pass |
-| II. Deterministic, Versioned Rules | Rule sets versioned on chain, cite standard + clause; verdict stores rule-set version + inputs hash; decimal math; determinism static check; overrides require justification | Pass |
-| III. Minimal On-Chain Data | Only IDs + SHA-256 on chain; documents and importer data in PostgreSQL; `RecordDocumentRemoval` for legal deletion | Pass |
-| IV. Permissioned Identity, Least Privilege | Fabric MSP per org, per-person certs with role attributes; access checked in chaincode; SoD for results/decision and draft/approve; revocation blocks new actions only. Importers are verified by the organization's Keycloak, which acts as its trust authority for importers; their appeals are signed by the StdOrg `service` identity and record the importer's account ID and a hash of their login token claims (importers act on the ledger only to appeal; certificates for thousands of importers add support load) | Pass |
-| V. Smart Contract Safety | Test-first chaincode; table-driven boundary/malicious tests; static analysis; upgrades via Fabric lifecycle requiring approval by every org | Pass |
-| VI. Traceability & Auditability | One consignmentId links everything; `GetHistory`, `VerifyDocument`, `ReassessDryRun` for auditors; logs carry `txId` | Pass |
-| VII. Simplicity & Proven Components | Mature platforms only; one language for chaincode + gateway; one database; no object store, no message queue, no Kubernetes yet. Dependencies justified below | Pass |
-| Domain constraints | Rule tests cite clause; manual-verdict path; UTC timestamps | Pass |
-| Workflow gates | CI runs chaincode unit, integration on multi-node network, web tests | Pass |
+| I. ثبت تغییرناپذیر حقیقت | همهٔ رویدادهای چرخهٔ عمر تراکنش‌های Fabric هستند؛ اصلاحات تراکنش‌های جدید هستند (`CorrectConsignment`)؛ وضعیت از تاریخچهٔ کلید قابل استخراج است | قبول |
+| II. قواعد قطعی و نسخه‌بندی‌شده | مجموعه قواعد روی زنجیره نسخه‌بندی می‌شوند و به استاندارد + بند ارجاع می‌دهند؛ رأی، نسخهٔ مجموعه قواعد + هش ورودی‌ها را ذخیره می‌کند؛ محاسبات اعشاری دقیق؛ بررسی ایستای قطعیت؛ لغو رأی (بازنگری) نیازمند توجیه است | قبول |
+| III. حداقل داده روی زنجیره | تنها شناسه‌ها + SHA-256 روی زنجیره؛ اسناد و داده‌های واردکننده در PostgreSQL؛ `RecordDocumentRemoval` برای حذف قانونی | قبول |
+| IV. هویت مجوزدار، حداقل دسترسی | Fabric MSP برای هر سازمان، گواهی‌های فردی با ویژگی‌های نقش؛ دسترسی در chaincode بررسی می‌شود؛ تفکیک وظایف برای نتایج/تصمیم و پیش‌نویس/تأیید؛ ابطال تنها اقدامات جدید را مسدود می‌کند. واردکنندگان توسط Keycloak سازمان که نقش مرجع اعتماد آن برای واردکنندگان را دارد راستی‌آزمایی می‌شوند؛ اعتراض‌های آنان با هویت `service` سازمان StdOrg امضا می‌شود و شناسهٔ حساب واردکننده و هشی از ادعاهای توکن ورود او را ثبت می‌کند (واردکنندگان تنها برای اعتراض روی دفتر کل اقدام می‌کنند؛ صدور گواهی برای هزاران واردکننده بار پشتیبانی را افزایش می‌دهد) | قبول |
+| V. ایمنی قرارداد هوشمند | chaincode آزمون‌محور؛ آزمون‌های مرزی/مخرب جدول‌محور؛ تحلیل ایستا؛ ارتقا از طریق چرخهٔ عمر Fabric با الزام تأیید همهٔ سازمان‌ها | قبول |
+| VI. ردیابی‌پذیری و ممیزی‌پذیری | یک consignmentId همه‌چیز را پیوند می‌دهد؛ `GetHistory`، `VerifyDocument`، `ReassessDryRun` برای ممیزان؛ لاگ‌ها `txId` را دربر دارند | قبول |
+| VII. سادگی و اجزای اثبات‌شده | تنها پلتفرم‌های بالغ؛ یک زبان برای chaincode + gateway؛ یک پایگاه داده؛ فعلاً بدون object store، بدون صف پیام، بدون Kubernetes. وابستگی‌ها در زیر توجیه شده‌اند | قبول |
+| محدودیت‌های حوزه | آزمون‌های قواعد به بند ارجاع می‌دهند؛ مسیر رأی دستی؛ برچسب‌های زمانی UTC | قبول |
+| دروازه‌های گردش کار | CI آزمون‌های واحد chaincode، یکپارچگی روی شبکهٔ چندنودی و آزمون‌های وب را اجرا می‌کند | قبول |
 
-**Dependency justification (Principle VII)**:
+**توجیه وابستگی‌ها (اصل VII)**:
 
-| Dependency | Needed for | Why not something simpler |
+| وابستگی | مورد نیاز برای | چرا نه چیزی ساده‌تر |
 |-----------|-----------|---------------------------|
-| Hyperledger Fabric | Shared tamper-evident ledger, org membership | Required by spec; only mature permissioned option with org-level endorsement |
-| PostgreSQL | Personal data, documents, read model | One store covers all off-chain needs |
-| Keycloak | OIDC login, TOTP, importer accounts | Building auth is a security risk; Fabric CA does not do user login |
-| `shopspring/decimal` | Exact limit comparison | Stdlib has no decimal type; `big.Rat` lacks parsing/rounding conveniences needed |
-| React + i18next | Interactive forms, RTL/LTR switching | Plain server templates make results entry and history views harder |
+| Hyperledger Fabric | دفتر کل مشترک با قابلیت آشکارسازی دست‌کاری، عضویت سازمان‌ها | الزام مشخصات؛ تنها گزینهٔ مجوزدار بالغ با تأیید (endorsement) در سطح سازمان |
+| PostgreSQL | داده‌های شخصی، اسناد، مدل خواندنی | یک مخزن همهٔ نیازهای خارج از زنجیره را پوشش می‌دهد |
+| Keycloak | ورود OIDC، TOTP، حساب‌های واردکنندگان | ساخت احراز هویت یک ریسک امنیتی است؛ Fabric CA ورود کاربر را انجام نمی‌دهد |
+| `shopspring/decimal` | مقایسهٔ دقیق حدود | کتابخانهٔ استاندارد نوع اعشاری ندارد؛ `big.Rat` امکانات تجزیه/گردکردن مورد نیاز را ندارد |
+| React + i18next | فرم‌های تعاملی، جابه‌جایی RTL/LTR | قالب‌های سادهٔ سمت سرور ورود نتایج و نماهای تاریخچه را دشوارتر می‌کنند |
 
-**Post-design re-check (after Phase 1)**: Data model, contracts, and quickstart keep all
-items above at Pass. No violations; Complexity Tracking is empty.
+**بررسی مجدد پس از طراحی (پس از فاز 1)**: مدل داده، قراردادها و quickstart همهٔ
+موارد فوق را در وضعیت قبول نگه می‌دارند. هیچ تخطی‌ای وجود ندارد؛ ردیابی پیچیدگی خالی است.
 
-## Project Structure
+## ساختار پروژه
 
-### Documentation (this feature)
+### مستندات (این ویژگی)
 
 ```text
 specs/001-goods-conformity-ledger/
@@ -92,7 +92,7 @@ specs/001-goods-conformity-ledger/
 └── tasks.md             # Phase 2 output (/speckit-tasks)
 ```
 
-### Source Code (repository root)
+### کد منبع (ریشهٔ مخزن)
 
 ```text
 chaincode/conformity/          # Go chaincode
@@ -131,11 +131,11 @@ testdata/                      # Rule sets, CSV fixtures used by quickstart
 Makefile
 ```
 
-**Structure Decision**: Three deployables (chaincode, gateway, web) because Fabric
-chaincode must be packaged separately from the client service, and the SPA ships as static
-files served by the gateway. Unit tests live beside Go code; cross-component tests live in
-`tests/integration/`.
+**تصمیم ساختاری**: سه بخش قابل استقرار (chaincode، gateway، وب)، زیرا chaincode در Fabric
+**باید** جدا از سرویس کلاینت بسته‌بندی شود و SPA به‌صورت فایل‌های ایستا
+ارائه می‌شود که gateway آن‌ها را سرو می‌کند. آزمون‌های واحد کنار کد Go قرار دارند؛ آزمون‌های میان‌جزئی در
+`tests/integration/` قرار دارند.
 
-## Complexity Tracking
+## ردیابی پیچیدگی
 
-No constitution violations to justify.
+هیچ تخطی از منشور برای توجیه وجود ندارد.

@@ -1,39 +1,39 @@
-# Specification Quality Checklist: Incoming Goods Conformity Ledger
+# چک‌لیست کیفیت مشخصات: دفتر کل انطباق کالای وارداتی
 
-**Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-10-23
-**Feature**: [spec.md](../spec.md)
+**هدف**: اعتبارسنجی کامل‌بودن و کیفیت مشخصات پیش از ورود به مرحلهٔ برنامه‌ریزی
+**ایجاد**: 2026-10-23
+**ویژگی**: [spec.md](../spec.md)
 
-## Content Quality
+## کیفیت محتوا
 
-- [x] No implementation details (languages, frameworks, APIs)
-- [x] Focused on user value and business needs
-- [x] Written for non-technical stakeholders
-- [x] All mandatory sections completed
+- [x] بدون جزئیات پیاده‌سازی (زبان‌ها، فریم‌ورک‌ها، APIها)
+- [x] متمرکز بر ارزش کاربر و نیازهای کسب‌وکار
+- [x] نوشته‌شده برای ذی‌نفعان غیرفنی
+- [x] همهٔ بخش‌های الزامی تکمیل شده‌اند
 
-## Requirement Completeness
+## کامل‌بودن نیازمندی‌ها
 
-- [x] No [NEEDS CLARIFICATION] markers remain
-- [x] Requirements are testable and unambiguous
-- [x] Success criteria are measurable
-- [x] Success criteria are technology-agnostic (no implementation details)
-- [x] All acceptance scenarios are defined
-- [x] Edge cases are identified
-- [x] Scope is clearly bounded
-- [x] Dependencies and assumptions identified
+- [x] هیچ نشانگر [NEEDS CLARIFICATION] باقی نمانده است
+- [x] نیازمندی‌ها آزمون‌پذیر و بدون ابهام هستند
+- [x] معیارهای موفقیت قابل اندازه‌گیری هستند
+- [x] معیارهای موفقیت مستقل از فناوری هستند (بدون جزئیات پیاده‌سازی)
+- [x] همهٔ سناریوهای پذیرش تعریف شده‌اند
+- [x] حالت‌های مرزی شناسایی شده‌اند
+- [x] دامنه به‌روشنی محدود شده است
+- [x] وابستگی‌ها و فرض‌ها شناسایی شده‌اند
 
-## Feature Readiness
+## آمادگی ویژگی
 
-- [x] All functional requirements have clear acceptance criteria
-- [x] User scenarios cover primary flows
-- [x] Feature meets measurable outcomes defined in Success Criteria
-- [x] No implementation details leak into specification
+- [x] همهٔ نیازمندی‌های کارکردی معیارهای پذیرش روشن دارند
+- [x] سناریوهای کاربری جریان‌های اصلی را پوشش می‌دهند
+- [x] ویژگی نتایج قابل اندازه‌گیری تعریف‌شده در معیارهای موفقیت را برآورده می‌کند
+- [x] هیچ جزئیات پیاده‌سازی به مشخصات راه نیافته است
 
-## Notes
+## یادداشت‌ها
 
-- "Blockchain", "smart contract", "digital signature" and "cryptographic hash" appear only
-  because the user's request and the constitution mandate them; no platform, language, or
-  product is named.
-- No clarification markers were needed; defaults (participants, pilot scope, 10-year
-  retention, certificate handling) are recorded in Assumptions and can be revisited with
-  `/speckit-clarify`.
+- «بلاک‌چین»، «قرارداد هوشمند»، «امضای دیجیتال» و «هش رمزنگاشتی» تنها به این دلیل آمده‌اند
+  که درخواست کاربر و منشور آن‌ها را الزامی کرده‌اند؛ هیچ پلتفرم، زبان یا
+  محصولی نام برده نشده است.
+- به هیچ نشانگر شفاف‌سازی نیاز نبود؛ پیش‌فرض‌ها (مشارکت‌کنندگان، دامنهٔ پایلوت، نگهداری
+  10 ساله، نحوهٔ رسیدگی به گواهی‌ها) در بخش فرض‌ها ثبت شده‌اند و می‌توان آن‌ها را با
+  `/speckit-clarify` بازنگری کرد.

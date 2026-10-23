@@ -1,163 +1,163 @@
-# Data Model: Incoming Goods Conformity Ledger
+# مدل داده: دفتر کل انطباق کالاهای وارداتی
 
-Two layers:
+دو لایه:
 
-- **On-chain** (Fabric world state + immutable history): IDs, hashes, verdicts, decisions.
-  No personal data (Constitution III, FR-006).
-- **Off-chain** (PostgreSQL): personal data, document bytes, user key material, read model
-  for reports. Rebuildable read model; source of truth is the ledger.
+- **درون‌زنجیره** (world state (وضعیت جهانی) در Fabric + تاریخچهٔ تغییرناپذیر): شناسه‌ها، هش‌ها، رأی‌ها، تصمیم‌ها.
+  بدون داده شخصی (منشور، اصل III، FR-006).
+- **برون‌زنجیره** (PostgreSQL): داده شخصی، بایت‌های اسناد، مواد کلید کاربران، مدل خواندنی
+  برای گزارش‌ها. مدل خواندنی قابل بازسازی است؛ منبع حقیقت، دفتر کل است.
 
-Conventions: IDs are ULIDs as strings. Timestamps are the transaction timestamp
-(`stub.GetTxTimestamp`, UTC, RFC 3339) — never wall-clock inside chaincode. Decimal values
-are strings (e.g., `"0.75"`). Every on-chain write also emits an event named after the
-function.
+قراردادها: شناسه‌ها ULIDهایی به‌صورت رشته هستند. مهرهای زمانی، مهر زمانی تراکنش هستند
+(`stub.GetTxTimestamp`، UTC، RFC 3339) — هرگز ساعت سیستم درون chaincode استفاده نمی‌شود. مقادیر اعشاری
+رشته هستند (مثلاً `"0.75"`). هر نوشتن درون‌زنجیره، رویدادی هم‌نام با
+تابع نیز منتشر می‌کند.
 
-## On-chain entities
+## موجودیت‌های درون‌زنجیره
 
-World-state keys use composite keys `<type>~<id>`. History of every key is available from
-the ledger (`GetHistoryForKey`), which gives the full append-only trail.
+کلیدهای world state از کلیدهای مرکب `<type>~<id>` استفاده می‌کنند. تاریخچهٔ هر کلید از
+دفتر کل در دسترس است (`GetHistoryForKey`) که ردّ کامل و فقط‌افزودنی را ارائه می‌دهد.
 
 ### Participant
 
-| Field | Type | Rules |
+| فیلد | نوع | قواعد |
 |-------|------|-------|
-| participantId | string | Unique; matches cert attribute `participantId` |
-| orgMsp | string | `StdOrgMSP` or a lab MSP |
-| roles | []enum | `inspector`, `lab`, `assessor`, `techOfficer`, `importer`, `auditor`, `admin`, `service` (StdOrg gateway identity for auto-assessment and importer appeals) |
+| participantId | string | یکتا؛ با ویژگی گواهی `participantId` منطبق است |
+| orgMsp | string | `StdOrgMSP` یا MSP یک آزمایشگاه |
+| roles | []enum | `inspector`، `lab`، `assessor`، `techOfficer`، `importer`، `auditor`، `admin`، `service` (هویت gateway سازمان StdOrg برای ارزیابی خودکار و اعتراض‌های واردکنندگان) |
 | status | enum | `active` / `revoked` |
-| revokedAt | timestamp? | Set on revocation; actions after it are refused (FR-020) |
+| revokedAt | timestamp? | هنگام ابطال تنظیم می‌شود؛ اقدامات پس از آن رد می‌شوند (FR-020) |
 
-Importers are participants with no certificate; `participantId` links to the off-chain
-importer record.
+واردکنندگان مشارکت‌کنندگانی بدون گواهی هستند؛ `participantId` به رکورد برون‌زنجیرهٔ
+واردکننده پیوند دارد.
 
 ### Consignment
 
-| Field | Type | Rules |
+| فیلد | نوع | قواعد |
 |-------|------|-------|
-| consignmentId | string | Unique (FR-002) |
-| parentId | string? | Set when this is a split lot of another consignment |
-| importerId | string | Participant with role `importer` |
-| productCategory | string | Code from the organization's category list |
-| productDescription | string | Max 500 chars; no personal data |
-| standardRef | object | `{number, edition}`; required |
-| quantity | decimal string + unit | > 0 |
+| consignmentId | string | یکتا (FR-002) |
+| parentId | string? | زمانی تنظیم می‌شود که این محموله بخشی تفکیک‌شده از محمولهٔ دیگری باشد |
+| importerId | string | مشارکت‌کننده با نقش `importer` |
+| productCategory | string | کدی از فهرست دسته‌بندی‌های سازمان |
+| productDescription | string | حداکثر 500 نویسه؛ بدون داده شخصی |
+| standardRef | object | `{number, edition}`؛ الزامی |
+| quantity | decimal string + unit | ‎> 0 |
 | origin | string | ISO 3166-1 alpha-2 |
-| arrivalDate | date | ≤ registration time |
-| registeredBy | participantId | Role `inspector` |
-| documents | []DocumentRef | See below |
-| status | enum | See state machine |
-| currentVerdictId | string? | Latest verdict |
-| currentDecisionId | string? | Latest decision |
+| arrivalDate | date | ≤ زمان ثبت |
+| registeredBy | participantId | نقش `inspector` |
+| documents | []DocumentRef | به ادامه مراجعه شود |
+| status | enum | به ماشین حالت مراجعه شود |
+| currentVerdictId | string? | آخرین رأی |
+| currentDecisionId | string? | آخرین تصمیم |
 
-### DocumentRef (embedded, on-chain)
+### DocumentRef (تعبیه‌شده، درون‌زنجیره)
 
-| Field | Type | Rules |
+| فیلد | نوع | قواعد |
 |-------|------|-------|
-| documentId | string | Matches off-chain record |
-| kind | enum | `invoice`, `packingList`, `photo`, `testReport`, `dispositionEvidence`, `other` |
-| sha256 | hex string | 64 chars (FR-005) |
-| removed | bool | True after legal deletion; never set back to false |
+| documentId | string | با رکورد برون‌زنجیره منطبق است |
+| kind | enum | `invoice`، `packingList`، `photo`، `testReport`، `dispositionEvidence`، `other` |
+| sha256 | hex string | 64 نویسه (FR-005) |
+| removed | bool | پس از حذف قانونی true می‌شود؛ هرگز به false بازنمی‌گردد |
 
-### Correction (event-only)
+### Correction (فقط رویداد)
 
-Corrections do not overwrite history: the corrected field is updated in world state, and
-the transaction stores `{targetId, field, oldValue, newValue, reason, by}`; both values stay
-in key history (FR-004). `reason` is required, max 500 chars.
+اصلاحات تاریخچه را بازنویسی نمی‌کنند: فیلد اصلاح‌شده در world state به‌روزرسانی می‌شود و
+تراکنش `{targetId, field, oldValue, newValue, reason, by}` را ذخیره می‌کند؛ هر دو مقدار در
+تاریخچهٔ کلید باقی می‌مانند (FR-004). `reason` الزامی است، حداکثر 500 نویسه.
 
 ### Sample
 
-| Field | Type | Rules |
+| فیلد | نوع | قواعد |
 |-------|------|-------|
-| sampleId | string | Unique |
-| consignmentId | string | Existing consignment |
-| takenBy | participantId | Role `inspector` |
+| sampleId | string | یکتا |
+| consignmentId | string | محمولهٔ موجود |
+| takenBy | participantId | نقش `inspector` |
 | takenAt | date | ≥ arrivalDate |
-| assignedLabMsp | string | Lab that will test it |
+| assignedLabMsp | string | آزمایشگاهی که آن را آزمون خواهد کرد |
 
 ### TestResult
 
-| Field | Type | Rules |
+| فیلد | نوع | قواعد |
 |-------|------|-------|
-| resultId | string | Unique |
-| sampleId | string | Existing sample |
-| testCode | string | Must exist in applicable rule set |
-| value | decimal string | Required for numeric tests |
-| passFail | enum? | For qualitative tests (e.g., labeling check): `pass`/`fail` |
-| unit | string | Must be the rule unit or convertible by the rule set's factor table |
-| method | string | Test method reference |
-| reportDocumentId | string | DocumentRef of kind `testReport` |
-| submittedBy | participantId | Role `lab`, from the sample's assigned lab |
-| batchId | string | Groups results uploaded together from one file |
+| resultId | string | یکتا |
+| sampleId | string | نمونهٔ موجود |
+| testCode | string | باید در مجموعه قواعد قابل‌اعمال وجود داشته باشد |
+| value | decimal string | برای آزمون‌های عددی الزامی است |
+| passFail | enum? | برای آزمون‌های کیفی (مثلاً بررسی برچسب‌گذاری): `pass`/`fail` |
+| unit | string | باید واحد قاعده باشد یا با جدول ضریب مجموعه قواعد قابل تبدیل باشد |
+| method | string | ارجاع به روش آزمون |
+| reportDocumentId | string | DocumentRef از نوع `testReport` |
+| submittedBy | participantId | نقش `lab`، از آزمایشگاه تخصیص‌یافته به نمونه |
+| batchId | string | نتایجی را که با هم از یک فایل بارگذاری شده‌اند گروه‌بندی می‌کند |
 
 ### RuleSet
 
-| Field | Type | Rules |
+| فیلد | نوع | قواعد |
 |-------|------|-------|
-| ruleSetId | string | Stable per standard edition |
-| version | int | Starts at 1, +1 per published version |
+| ruleSetId | string | برای هر ویرایش استاندارد ثابت است |
+| version | int | از 1 شروع می‌شود، به ازای هر نسخهٔ منتشرشده +1 |
 | standardRef | object | `{number, edition}` |
-| productCategories | []string | Categories this rule set applies to |
-| tests | []RuleTest | At least one |
-| unitFactors | map unit→{baseUnit, factor} | Decimal factors; stored as sorted list for determinism |
-| effectiveFrom | date | Must be ≥ approval date |
-| draftedBy | participantId | Role `techOfficer` |
-| approvedBy | participantId? | Role `techOfficer`, ≠ draftedBy (FR-019) |
-| status | enum | `draft` → `approved` (immutable after approval) |
+| productCategories | []string | دسته‌هایی که این مجموعه قواعد بر آن‌ها اعمال می‌شود |
+| tests | []RuleTest | حداقل یکی |
+| unitFactors | map unit→{baseUnit, factor} | ضرایب اعشاری؛ برای قطعیت (determinism) به‌صورت فهرست مرتب ذخیره می‌شود |
+| effectiveFrom | date | باید ≥ تاریخ تأیید باشد |
+| draftedBy | participantId | نقش `techOfficer` |
+| approvedBy | participantId? | نقش `techOfficer`، ‏≠ draftedBy (FR-019) |
+| status | enum | `draft` → `approved` (پس از تأیید تغییرناپذیر) |
 
-**RuleTest**: `testCode`, `name`, `clause` (standard clause, required), `kind`
-(`numeric` / `qualitative`), `unit`, `min?`, `max?`, `minInclusive`, `maxInclusive`,
-`required` (bool), `samplesRequired` (int ≥ 1).
+**RuleTest**: `testCode`، `name`، `clause` (بند استاندارد، الزامی)، `kind`
+(`numeric` / `qualitative`)، `unit`، `min?`، `max?`، `minInclusive`، `maxInclusive`،
+`required` (bool)، `samplesRequired` (int ≥ 1).
 
 ### Verdict
 
-| Field | Type | Rules |
+| فیلد | نوع | قواعد |
 |-------|------|-------|
-| verdictId | string | Unique |
+| verdictId | string | یکتا |
 | consignmentId | string | |
-| ruleSetId + version | string + int | Version in force on arrivalDate (FR-009/010) |
-| inputsHash | sha256 | Hash of sorted input result IDs and values |
+| ruleSetId + version | string + int | نسخهٔ معتبر در arrivalDate (FR-009/010) |
+| inputsHash | sha256 | هش شناسه‌ها و مقادیر مرتب‌شدهٔ نتایج ورودی |
 | perTest | []{testCode, outcome, measured, limit, reason} | outcome: `pass`/`fail`/`missing`/`conflict`/`unitError` |
 | overall | enum | `Conforming` / `NonConforming` / `RequiresReview` |
-| manual | bool | True for the manual path (FR-017) |
+| manual | bool | برای مسیر دستی true است (FR-017) |
 
-Overall rule: any `fail` → `NonConforming`; else any `missing`/`conflict`/`unitError` or
-no active rule set → `RequiresReview`; else `Conforming`. A `fail` only counts if no other
-result for the same test and sample conflicts with it; conflicting results → `conflict`.
+قاعدهٔ کلی: هر `fail` ← `NonConforming`؛ در غیر این صورت هر `missing`/`conflict`/`unitError` یا
+نبود مجموعه قواعد فعال ← `RequiresReview`؛ در غیر این صورت `Conforming`. یک `fail` تنها زمانی محسوب می‌شود که هیچ
+نتیجهٔ دیگری برای همان آزمون و نمونه با آن در تعارض نباشد؛ نتایج متعارض ← `conflict`.
 
 ### Decision
 
-| Field | Type | Rules |
+| فیلد | نوع | قواعد |
 |-------|------|-------|
 | decisionId | string | |
 | consignmentId | string | |
-| verdictId | string | Verdict being confirmed/overridden |
+| verdictId | string | رأیی که تأیید/بازنگری رأی می‌شود |
 | kind | enum | `confirm` / `override` / `appealOutcome` / `manual` |
 | outcome | enum | `Conforming` / `NonConforming` |
-| justification | string | Required for `override`, `appealOutcome`, `manual`; max 2000 chars |
-| certificateRef | string? | Required when outcome `Conforming` |
-| rejectionReasons | []string? | Required when outcome `NonConforming` |
-| decidedBy | participantId | Role `assessor`; MUST NOT be the MSP/person who submitted the results (FR-019) |
-| previousDecisionId | string? | Set for appeal outcomes |
+| justification | string | برای `override`، `appealOutcome`، `manual` الزامی است؛ حداکثر 2000 نویسه |
+| certificateRef | string? | هنگامی که outcome برابر `Conforming` باشد الزامی است |
+| rejectionReasons | []string? | هنگامی که outcome برابر `NonConforming` باشد الزامی است |
+| decidedBy | participantId | نقش `assessor`؛ **نباید** همان MSP/فردی باشد که نتایج را ثبت کرده است (FR-019) |
+| previousDecisionId | string? | برای نتایج اعتراض تنظیم می‌شود |
 
 ### Appeal
 
-`appealId`, `consignmentId`, `decisionId`, `filedBy` (importer participant), `grounds`
-(max 2000 chars), `status` (`open` / `resolved`), `resolutionDecisionId?`.
+`appealId`، `consignmentId`، `decisionId`، `filedBy` (مشارکت‌کنندهٔ واردکننده)، `grounds`
+(حداکثر 2000 نویسه)، `status` (`open` / `resolved`)، `resolutionDecisionId?`.
 
 ### Disposition (Clarification Q5)
 
-| Field | Type | Rules |
+| فیلد | نوع | قواعد |
 |-------|------|-------|
 | dispositionId | string | |
-| consignmentId | string | Final decision NonConforming |
+| consignmentId | string | تصمیم نهایی NonConforming |
 | type | enum | `reExport` / `destruction` / `rework` |
-| chosenBy | participantId | Role `inspector` or `assessor` |
-| completedBy | participantId? | Role `inspector` |
+| chosenBy | participantId | نقش `inspector` یا `assessor` |
+| completedBy | participantId? | نقش `inspector` |
 | completedAt | date? | |
-| evidenceDocumentIds | []string | ≥ 1 on completion |
-| reassessmentConsignmentLink | string? | For rework: the new verdict cycle uses the same consignmentId |
+| evidenceDocumentIds | []string | ‏≥ 1 هنگام تکمیل |
+| reassessmentConsignmentLink | string? | برای rework: چرخهٔ رأی جدید از همان consignmentId استفاده می‌کند |
 
-## Consignment state machine
+## ماشین حالت محموله
 
 ```text
 Registered ──sample──▶ Sampling ──results──▶ ResultsReceived ──assess──▶ Assessed
@@ -169,17 +169,17 @@ Conforming | NonConforming ──appeal──▶ UnderAppeal ──appealOutcome
 Any non-final ──split──▶ Split (children get their own lifecycle)
 ```
 
-Transitions not listed are refused by chaincode. `manual` verdicts enter at `Assessed`.
+گذارهایی که فهرست نشده‌اند توسط chaincode رد می‌شوند. رأی‌های `manual` در حالت `Assessed` وارد می‌شوند.
 
-## Off-chain entities (PostgreSQL)
+## موجودیت‌های برون‌زنجیره (PostgreSQL)
 
-| Table | Key fields | Notes |
+| جدول | فیلدهای کلیدی | یادداشت |
 |-------|-----------|-------|
-| importer | id, legal_name, national_id, contact_email, phone, locale | Personal data (never on chain) |
+| importer | id, legal_name, national_id, contact_email, phone, locale | داده شخصی (هرگز درون‌زنجیره نیست) |
 | app_user | id, participant_id, org, oidc_subject, locale, calendar (`jalali`/`gregorian`) | |
-| user_key | user_id, encrypted_private_key, cert_pem | Wrapped with HSM/file key |
-| document | id, consignment_id, kind, filename, mime, size (≤ 25 MB), sha256, bytes, removed_at | Bytes nulled on legal deletion |
-| results_upload | id, lab_msp, filename, sha256, status, errors_json | Per-row errors on reject |
+| user_key | user_id, encrypted_private_key, cert_pem | با کلید HSM/فایل پوشانده می‌شود |
+| document | id, consignment_id, kind, filename, mime, size (≤ 25 MB), sha256, bytes, removed_at | بایت‌ها هنگام حذف قانونی null می‌شوند |
+| results_upload | id, lab_msp, filename, sha256, status, errors_json | خطاهای هر ردیف هنگام رد |
 | notification | id, recipient_user_id, kind, payload_json, sent_at, read_at | |
-| rm_consignment, rm_verdict, rm_decision, rm_disposition | mirror of chain fields + block number | Read model, rebuilt from ledger |
-| projection_checkpoint | channel, last_block | Resume point for event listener |
+| rm_consignment, rm_verdict, rm_decision, rm_disposition | بازتاب فیلدهای زنجیره + شمارهٔ بلوک | مدل خواندنی، بازسازی‌شده از دفتر کل |
+| projection_checkpoint | channel, last_block | نقطهٔ ازسرگیری برای شنوندهٔ رویداد |

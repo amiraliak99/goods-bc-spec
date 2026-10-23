@@ -1,322 +1,322 @@
 ---
 
-description: "Task list for Incoming Goods Conformity Ledger"
+description: "فهرست وظایف دفتر کل انطباق کالاهای ورودی"
 ---
 
-# Tasks: Incoming Goods Conformity Ledger
+# وظایف: دفتر کل انطباق کالاهای ورودی
 
-**Input**: Design documents from `/specs/001-goods-conformity-ledger/`
+**ورودی**: اسناد طراحی از `/specs/001-goods-conformity-ledger/`
 
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
+**پیش‌نیازها**: plan.md، spec.md، research.md، data-model.md، contracts/، quickstart.md
 
-**Tests**: Included. Constitution Principle V makes test-first chaincode NON-NEGOTIABLE, and
-the workflow gate requires integration tests on a multi-node network. Chaincode tests MUST
-be written and seen failing before the matching implementation task.
+**آزمون‌ها**: گنجانده شده‌اند. اصل V منشور، chaincode آزمون‌محور (ابتدا آزمون) را غیرقابل‌مذاکره می‌داند و
+دروازه گردش کار، آزمون‌های یکپارچگی روی شبکه‌ای چندنودی را الزامی می‌کند. آزمون‌های chaincode **باید**
+پیش از وظیفه پیاده‌سازی متناظر نوشته شوند و شکست آن‌ها مشاهده شود.
 
-**Organization**: Tasks are grouped by user story so each story can be built and tested on
-its own.
+**سازمان‌دهی**: وظایف بر اساس داستان کاربری گروه‌بندی شده‌اند تا هر داستان به‌تنهایی ساخته و
+آزموده شود.
 
-## Format: `[ID] [P?] [Story] Description`
+## قالب: `[ID] [P?] [Story] Description`
 
-- **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (US1–US5)
+- **[P]**: قابل اجرای موازی (فایل‌های متفاوت، بدون وابستگی)
+- **[Story]**: داستان کاربری‌ای که این وظیفه به آن تعلق دارد (US1–US5)
 
-## Path Conventions
+## قراردادهای مسیر
 
 - Chaincode: `chaincode/conformity/`
-- Gateway: `gateway/cmd/`, `gateway/internal/`, `gateway/migrations/`
-- Web: `web/src/`, `web/tests/`
-- Network: `network/compose/`, `network/config/`, `network/scripts/`
-- Cross-component tests: `tests/integration/`; fixtures: `testdata/`
+- Gateway: `gateway/cmd/`، `gateway/internal/`، `gateway/migrations/`
+- وب: `web/src/`، `web/tests/`
+- شبکه: `network/compose/`، `network/config/`، `network/scripts/`
+- آزمون‌های بین‌مؤلفه‌ای: `tests/integration/`؛ داده‌های آزمون: `testdata/`
 
 ---
 
-## Phase 1: Setup (Shared Infrastructure)
+## فاز 1: راه‌اندازی (زیرساخت مشترک)
 
-**Purpose**: Repository layout, toolchains, local 3-org network
+**هدف**: ساختار مخزن، زنجیره‌ابزارها، شبکه محلی سه‌سازمانی
 
-- [ ] T001 Create the directory layout from plan.md (`chaincode/conformity/`, `gateway/cmd/gateway/`, `gateway/internal/{api,fabric,store,projector,resultsfile,notify,keys,config}/`, `gateway/migrations/`, `web/`, `network/{compose,config,scripts}/`, `tests/integration/`, `testdata/`, `tools/detcheck/`) and a root `Makefile` with targets `network-up`, `network-down`, `chaincode-deploy`, `stack-up`, `seed`, `test-chaincode`, `test-integration`, `test-web`
-- [ ] T002 Initialize Go module in `chaincode/conformity/go.mod` (Go 1.23) with `github.com/hyperledger/fabric-contract-api-go/v2`, `github.com/hyperledger/fabric-chaincode-go/v2`, `github.com/shopspring/decimal`
-- [ ] T003 [P] Initialize Go module in `gateway/go.mod` (Go 1.23) with `github.com/hyperledger/fabric-gateway`, `github.com/jackc/pgx/v5`, `github.com/coreos/go-oidc/v3`, `github.com/prometheus/client_golang`; logging uses stdlib `log/slog`
-- [ ] T004 [P] Scaffold web app in `web/` with Vite + React 18 + TypeScript 5, add `react-i18next`, `i18next`, `oidc-client-ts`, `vitest`, `@testing-library/react`, `@playwright/test`
-- [ ] T005 [P] Add Go lint config `.golangci.yml` (govet, staticcheck, errcheck) and web lint config `web/eslint.config.js`
-- [ ] T006 [P] Implement determinism analyzer in `tools/detcheck/main.go` using `golang.org/x/tools/go/analysis` that fails on: any use of `float32`/`float64`, `time.Now`, `math/rand`, imports of `net`, `net/http`, `os`, and `range` over a map type; wire it into `make test-chaincode` against `chaincode/conformity/...`
-- [ ] T007 Write Fabric channel config `network/config/configtx.yaml` with orgs `StdOrgMSP`, `Lab1MSP`, `Lab2MSP`, 3 Raft orderers owned by StdOrg, channel `conformity`, and Fabric CA server configs in `network/config/ca/{stdorg,lab1,lab2}/fabric-ca-server-config.yaml`
-- [ ] T008 Write `network/compose/docker-compose.fabric.yaml` with 3 CAs, `orderer{0,1,2}.stdorg`, `peer0.stdorg`, `peer1.stdorg`, `peer0.lab1`, `peer0.lab2` (LevelDB state, Prometheus metrics enabled)
-- [ ] T009 Write `network/scripts/network-up.sh` (enroll org admins, create channel `conformity`, join all peers) and `network/scripts/deploy-chaincode.sh` (package, install on all peers, approve by every org, commit with endorsement policy `AND('StdOrgMSP.peer', OutOf(1, 'Lab1MSP.peer', 'Lab2MSP.peer'))`)
-- [ ] T010 Write `network/compose/docker-compose.stack.yaml` with PostgreSQL 16 for StdOrg and Lab1, Keycloak 26 importing `network/config/keycloak/stdorg-realm.json` and `network/config/keycloak/lab1-realm.json` (seed users `inspector1`, `assessor1`, `assessor2`, `techofficer1`, `techofficer2`, `auditor1`, `admin1`, `importer1` on StdOrg, `lab1user` on Lab1; password `Passw0rd!`; TOTP off in dev), StdOrg gateway on `:8080` and Lab1 gateway on `:8081`
-- [ ] T011 [P] Add CI workflow `.github/workflows/ci.yml` running `make test-chaincode`, `make network-up chaincode-deploy stack-up test-integration`, `make test-web`; any failure blocks merge
-
----
-
-## Phase 2: Foundational (Blocking Prerequisites)
-
-**Purpose**: Shared chaincode core, identity/access, rule-set storage, gateway skeleton, web shell
-
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete
-
-### Chaincode core
-
-- [ ] T012 Define all on-chain structs and enums from data-model.md in `chaincode/conformity/types.go` (Participant, Consignment, DocumentRef, Correction, Sample, TestResult, RuleSet, RuleTest, Verdict, Decision, Appeal, Disposition); decimal fields are `string`; roles enum `inspector`, `lab`, `assessor`, `techOfficer`, `importer`, `auditor`, `admin`, `service`
-- [ ] T013 [P] Define error codes `ERR_FORBIDDEN`, `ERR_NOT_FOUND`, `ERR_INVALID`, `ERR_STATE`, `ERR_SOD`, `ERR_HASH_MISMATCH` and a constructor returning `CODE: message` in `chaincode/conformity/errors.go`
-- [ ] T014 [P] Build in-memory fake stub for tests in `chaincode/conformity/fakestub_test.go`: world state, per-key history, fixed tx timestamp, tx ID, and configurable caller MSP + cert attributes `role`, `participantId`
-- [ ] T015 Write state helpers in `chaincode/conformity/state.go`: composite keys `<type>~<id>`, `getJSON`/`putJSON`, `emit(eventName, payload)` named after the calling function, `txTime()` from `stub.GetTxTimestamp()` only, and `sortedKeys` helper (never range maps for output)
-- [ ] T016 Write failing tests in `chaincode/conformity/access_test.go`: unknown participant → `ERR_FORBIDDEN`; revoked participant (action after `revokedAt`) → `ERR_FORBIDDEN`; wrong role → `ERR_FORBIDDEN`; correct role passes
-- [ ] T017 Implement caller identity and `requireRole(roles...)` in `chaincode/conformity/access.go` reading `role` and `participantId` cert attributes via `cid`, checking Participant `status` is `active`
-- [ ] T018 Write failing tests in `chaincode/conformity/participant_test.go`: `RegisterParticipant` only by `admin` of the same `orgMsp`; `RevokeParticipant` sets `status` `revoked` and `revokedAt`; past entries signed by the revoked participant stay readable (FR-020)
-- [ ] T019 Implement `RegisterParticipant` and `RevokeParticipant` in `chaincode/conformity/participant.go`, plus a one-time `InitLedger` that registers the first StdOrg admin from the deploying identity
-- [ ] T020 Write failing tests in `chaincode/conformity/ruleset_test.go`: `DraftRuleSet` by `techOfficer` creates `version` = previous + 1, `status` `draft`; every RuleTest requires `clause`; `ApproveRuleSet` by the drafter → `ERR_SOD`; approved rule set is immutable; `effectiveFrom` must be ≥ approval date; `GetRuleSet(id, date)` returns the highest approved version with `effectiveFrom` ≤ date; `unitFactors` stored as list sorted by unit
-- [ ] T021 Implement `DraftRuleSet`, `ApproveRuleSet`, `GetRuleSet` (by version or in force on a date) in `chaincode/conformity/ruleset.go`
-- [ ] T022 Register the contract and route all functions in `chaincode/conformity/contract.go` and `chaincode/conformity/main.go` (chaincode-as-a-service entry point)
-- [ ] T023 Write `network/scripts/seed.sh` that enrolls seed users with Fabric CA attributes, registers participants, and drafts (`techofficer1`) + approves (`techofficer2`) `testdata/rulesets/iec60335-1-ed6-v1.json` via `peer chaincode invoke`; create that rule-set fixture with at least one numeric test with inclusive limit (`IR_MIN`, `MOhm`, min `"2"`), one with exclusive max and unit factor (`LEAK_MAX`, `mA`, `A -> mA = 1000`), and one qualitative test (`LABEL`)
-
-### Gateway core
-
-- [ ] T024 Implement env config loading in `gateway/internal/config/config.go`: org MSP, ordered peer endpoint list (own peer first, StdOrg peer as fallback for lab gateways), DB URL, OIDC issuer/client, SMTP relay, key-wrapping key file path, listen address
-- [ ] T025 Write off-chain schema `gateway/migrations/001_init.sql` for tables `importer`, `app_user` (`calendar` in `jalali`/`gregorian`, `locale` in `fa`/`en`), `user_key`, `document` (CHECK `size <= 26214400`), `results_upload`, `notification`, `rm_consignment`, `rm_verdict`, `rm_decision`, `rm_disposition`, `projection_checkpoint`; apply embedded migrations in order at startup from `gateway/internal/store/migrate.go`
-- [ ] T026 [P] Implement pgx pool and user/key queries in `gateway/internal/store/store.go` and `gateway/internal/store/users.go`
-- [ ] T027 [P] Implement AES-256-GCM wrap/unwrap of user private keys with the wrapping key file in `gateway/internal/keys/keys.go` with a round-trip test `gateway/internal/keys/keys_test.go` (`// ponytail: file wrapping key, move to HSM for production`)
-- [ ] T028 Implement Fabric client in `gateway/internal/fabric/client.go`: per-request signer built from the authenticated user's unwrapped key, `Submit`/`Evaluate`, failover across the configured peer list, parse `ERR_*` code from chaincode errors, return `txId`
-- [ ] T029 [P] Implement user enrollment with Fabric CA (register + enroll with attributes `role`, `participantId`, store wrapped key) in `gateway/internal/fabric/enroll.go`
-- [ ] T030 Implement OIDC bearer middleware in `gateway/internal/api/auth.go` (go-oidc verifier, map `sub` to `app_user`, roles from token, require a second-factor `acr` claim for every role except `importer`)
-- [ ] T031 [P] Implement error mapping in `gateway/internal/api/errors.go` (`ERR_INVALID` 422, `ERR_FORBIDDEN`/`ERR_SOD` 403, `ERR_NOT_FOUND` 404, `ERR_STATE` 409, `ERR_HASH_MISMATCH` 409; body `{code, message, details}`) and fa/en message catalog in `gateway/internal/api/messages.go` selected by `Accept-Language`
-- [ ] T032 Implement router and server in `gateway/internal/api/router.go` and `gateway/cmd/gateway/main.go` with `/healthz`, `/metrics`, slog JSON logger adding `txId` and `consignmentId` fields, serving the built SPA from `web/dist`
-- [ ] T033 Implement block event projector skeleton in `gateway/internal/projector/projector.go`: resume from `projection_checkpoint`, dispatch events by name to registered handlers, update checkpoint in the same DB transaction
-- [ ] T034 Implement participants endpoints `POST /api/v1/participants` and `POST /api/v1/participants/{id}/revoke` (admin) in `gateway/internal/api/participants.go`
-
-### Web shell
-
-- [ ] T035 [P] Set up i18n in `web/src/i18n/index.ts` with `web/src/i18n/fa.json` (default) and `web/src/i18n/en.json`; set `<html lang>` and `<html dir="rtl|ltr">` on language change; use CSS logical properties only in `web/src/styles.css`
-- [ ] T036 [P] Implement `formatDate`/`formatDateTime` in `web/src/lib/date.ts` using `Intl.DateTimeFormat('fa-IR-u-ca-persian')` or `'en-GB'` per user calendar, input always UTC ISO strings; test in `web/tests/date.test.ts`
-- [ ] T037 Implement OIDC login with `oidc-client-ts` in `web/src/auth.ts` and API wrapper in `web/src/lib/api.ts` (bearer token, `Accept-Language`, error code → translated message)
-- [ ] T038 Implement app shell with role-based routes and user settings (language, calendar) in `web/src/App.tsx` and `web/src/pages/Settings.tsx`
-
-### Integration harness
-
-- [ ] T039 Implement integration helpers in `tests/integration/harness_test.go`: tokens via `network/scripts/token.sh <user>`, JSON HTTP helpers for `:8080`/`:8081`, `dockerStop`/`dockerStart`, direct DB access for tamper tests
-
-**Checkpoint**: Network up, chaincode deployed with participants and pilot rule set, gateway authenticates users and signs per person, web shell logs in
+- [ ] T001 ایجاد ساختار پوشه‌ها مطابق plan.md (`chaincode/conformity/`، `gateway/cmd/gateway/`، `gateway/internal/{api,fabric,store,projector,resultsfile,notify,keys,config}/`، `gateway/migrations/`، `web/`، `network/{compose,config,scripts}/`، `tests/integration/`، `testdata/`، `tools/detcheck/`) و یک `Makefile` ریشه با هدف‌های `network-up`، `network-down`، `chaincode-deploy`، `stack-up`، `seed`، `test-chaincode`، `test-integration`، `test-web`
+- [ ] T002 مقداردهی اولیه ماژول Go در `chaincode/conformity/go.mod` (Go 1.23) با `github.com/hyperledger/fabric-contract-api-go/v2`، `github.com/hyperledger/fabric-chaincode-go/v2`، `github.com/shopspring/decimal`
+- [ ] T003 [P] مقداردهی اولیه ماژول Go در `gateway/go.mod` (Go 1.23) با `github.com/hyperledger/fabric-gateway`، `github.com/jackc/pgx/v5`، `github.com/coreos/go-oidc/v3`، `github.com/prometheus/client_golang`؛ ثبت رخدادها از `log/slog` کتابخانه استاندارد استفاده می‌کند
+- [ ] T004 [P] ایجاد اسکلت برنامه وب در `web/` با Vite + React 18 + TypeScript 5، و افزودن `react-i18next`، `i18next`، `oidc-client-ts`، `vitest`، `@testing-library/react`، `@playwright/test`
+- [ ] T005 [P] افزودن پیکربندی lint برای Go در `.golangci.yml` (govet، staticcheck، errcheck) و پیکربندی lint وب در `web/eslint.config.js`
+- [ ] T006 [P] پیاده‌سازی تحلیل‌گر قطعیت در `tools/detcheck/main.go` با استفاده از `golang.org/x/tools/go/analysis` که در این موارد شکست می‌خورد: هرگونه استفاده از `float32`/`float64`، `time.Now`، `math/rand`، import کردن `net`، `net/http`، `os`، و `range` روی نوع map؛ اتصال آن به `make test-chaincode` روی `chaincode/conformity/...`
+- [ ] T007 نوشتن پیکربندی کانال Fabric در `network/config/configtx.yaml` با سازمان‌های `StdOrgMSP`، `Lab1MSP`، `Lab2MSP`، سه orderer از نوع Raft متعلق به StdOrg، کانال `conformity`، و پیکربندی‌های سرور Fabric CA در `network/config/ca/{stdorg,lab1,lab2}/fabric-ca-server-config.yaml`
+- [ ] T008 نوشتن `network/compose/docker-compose.fabric.yaml` با سه CA، `orderer{0,1,2}.stdorg`، `peer0.stdorg`، `peer1.stdorg`، `peer0.lab1`، `peer0.lab2` (وضعیت LevelDB، معیارهای Prometheus فعال)
+- [ ] T009 نوشتن `network/scripts/network-up.sh` (ثبت‌نام مدیران سازمان‌ها، ایجاد کانال `conformity`، پیوستن همه peerها) و `network/scripts/deploy-chaincode.sh` (بسته‌بندی، نصب روی همه peerها، تأیید توسط هر سازمان، commit با سیاست تأیید `AND('StdOrgMSP.peer', OutOf(1, 'Lab1MSP.peer', 'Lab2MSP.peer'))`)
+- [ ] T010 نوشتن `network/compose/docker-compose.stack.yaml` با PostgreSQL 16 برای StdOrg و Lab1، Keycloak 26 با import کردن `network/config/keycloak/stdorg-realm.json` و `network/config/keycloak/lab1-realm.json` (کاربران اولیه `inspector1`، `assessor1`، `assessor2`، `techofficer1`، `techofficer2`، `auditor1`، `admin1`، `importer1` در StdOrg، `lab1user` در Lab1؛ گذرواژه `Passw0rd!`؛ TOTP در محیط توسعه غیرفعال)، gateway سازمان StdOrg روی `:8080` و gateway سازمان Lab1 روی `:8081`
+- [ ] T011 [P] افزودن گردش کار CI در `.github/workflows/ci.yml` که `make test-chaincode`، `make network-up chaincode-deploy stack-up test-integration`، `make test-web` را اجرا می‌کند؛ هر شکستی مانع ادغام می‌شود
 
 ---
 
-## Phase 3: User Story 1 - Register an Incoming Consignment as a Tamper-Proof Record (Priority: P1) 🎯 MVP
+## فاز 2: زیربنایی (پیش‌نیازهای مسدودکننده)
 
-**Goal**: Inspectors register consignments with documents; history is append-only; altered documents are detected
+**هدف**: هسته مشترک chaincode، هویت/دسترسی، ذخیره‌سازی مجموعه قواعد، اسکلت gateway، پوسته وب
 
-**Independent Test**: quickstart.md Scenario 1 — register, correct, tamper with invoice bytes, verify shows `mismatch`, missing `standardRef` → 422
+**⚠️ بحرانی**: تا تکمیل این فاز، هیچ کاری روی داستان‌های کاربری نمی‌تواند آغاز شود
 
-### Tests for User Story 1 ⚠️ (write first, must fail)
+### هسته chaincode
 
-- [ ] T040 [P] [US1] Tests in `chaincode/conformity/consignment_test.go`: `RegisterConsignment` only by `inspector`; required `importerId`, `productCategory`, `standardRef` `{number, edition}`; `productDescription` "Max 500 chars"; `quantity` "> 0"; `origin` "ISO 3166-1 alpha-2"; `arrivalDate` "≤ registration time"; status becomes `Registered`; duplicate ID → `ERR_INVALID`
-- [ ] T041 [P] [US1] Tests in `chaincode/conformity/correction_test.go`: `CorrectConsignment` requires `reason` ("required, max 500 chars"); `consignmentId` and `registeredBy` not correctable; key history keeps old and new values; event carries `{targetId, field, oldValue, newValue, reason, by}`
-- [ ] T042 [P] [US1] Tests in `chaincode/conformity/documents_test.go`: `AttachDocument` append-only by `inspector`/`lab`; `sha256` "64 chars" hex; `kind` in `invoice`, `packingList`, `photo`, `testReport`, `dispositionEvidence`, `other`; `RecordDocumentRemoval` admin-only, `removed` "never set back to false"; `VerifyDocument` returns `ok`/`mismatch`/`removed`
-- [ ] T043 [P] [US1] Tests in `chaincode/conformity/split_test.go`: `SplitConsignment` creates child consignments with `parentId`, parent → `Split`; refused on final states with `ERR_STATE`
-- [ ] T044 [P] [US1] Tests in `chaincode/conformity/history_test.go`: `GetHistory` returns entries ordered by timestamp with `txId`, `timestamp`, `function`, `actor`, `payload`; refused for `importer` and `lab`
-- [ ] T045 [P] [US1] Integration test for quickstart Scenario 1 in `tests/integration/us1_registration_test.go`
+- [ ] T012 تعریف همه ساختارها و enumهای روی زنجیره از data-model.md در `chaincode/conformity/types.go` (Participant، Consignment، DocumentRef، Correction، Sample، TestResult، RuleSet، RuleTest، Verdict، Decision، Appeal، Disposition)؛ فیلدهای اعشاری از نوع `string` هستند؛ enum نقش‌ها `inspector`، `lab`، `assessor`، `techOfficer`، `importer`، `auditor`، `admin`، `service`
+- [ ] T013 [P] تعریف کدهای خطای `ERR_FORBIDDEN`، `ERR_NOT_FOUND`، `ERR_INVALID`، `ERR_STATE`، `ERR_SOD`، `ERR_HASH_MISMATCH` و سازنده‌ای که `CODE: message` برمی‌گرداند در `chaincode/conformity/errors.go`
+- [ ] T014 [P] ساخت stub جعلی درون‌حافظه‌ای برای آزمون‌ها در `chaincode/conformity/fakestub_test.go`: وضعیت جهانی، تاریخچه به ازای هر کلید، مهر زمانی ثابت تراکنش، شناسه تراکنش، و MSP فراخوان و ویژگی‌های گواهی `role`، `participantId` قابل پیکربندی
+- [ ] T015 نوشتن توابع کمکی وضعیت در `chaincode/conformity/state.go`: کلیدهای ترکیبی `<type>~<id>`، `getJSON`/`putJSON`، `emit(eventName, payload)` که به نام تابع فراخوان نام‌گذاری می‌شود، `txTime()` فقط از `stub.GetTxTimestamp()`، و تابع کمکی `sortedKeys` (هرگز برای خروجی روی mapها range نکنید)
+- [ ] T016 نوشتن آزمون‌های شکست‌خورده در `chaincode/conformity/access_test.go`: شرکت‌کننده ناشناخته → `ERR_FORBIDDEN`؛ شرکت‌کننده ابطال‌شده (اقدام پس از `revokedAt`) → `ERR_FORBIDDEN`؛ نقش نادرست → `ERR_FORBIDDEN`؛ نقش درست پذیرفته می‌شود
+- [ ] T017 پیاده‌سازی هویت فراخوان و `requireRole(roles...)` در `chaincode/conformity/access.go` با خواندن ویژگی‌های گواهی `role` و `participantId` از طریق `cid`، و بررسی اینکه `status` شرکت‌کننده `active` باشد
+- [ ] T018 نوشتن آزمون‌های شکست‌خورده در `chaincode/conformity/participant_test.go`: `RegisterParticipant` فقط توسط `admin` همان `orgMsp`؛ `RevokeParticipant` مقدار `status` را `revoked` و `revokedAt` را تنظیم می‌کند؛ مدخل‌های گذشته امضاشده توسط شرکت‌کننده ابطال‌شده قابل خواندن باقی می‌مانند (FR-020)
+- [ ] T019 پیاده‌سازی `RegisterParticipant` و `RevokeParticipant` در `chaincode/conformity/participant.go`، به‌علاوه یک `InitLedger` یک‌باره که نخستین مدیر StdOrg را از هویت مستقرکننده ثبت می‌کند
+- [ ] T020 نوشتن آزمون‌های شکست‌خورده در `chaincode/conformity/ruleset_test.go`: `DraftRuleSet` توسط `techOfficer` نسخه‌ای با `version` = قبلی + 1 و `status` برابر `draft` ایجاد می‌کند؛ هر RuleTest به `clause` نیاز دارد؛ `ApproveRuleSet` توسط تهیه‌کننده پیش‌نویس → `ERR_SOD`؛ مجموعه قواعد تأییدشده تغییرناپذیر است؛ `effectiveFrom` **باید** ≥ تاریخ تأیید باشد؛ `GetRuleSet(id, date)` بالاترین نسخه تأییدشده با `effectiveFrom` ≤ تاریخ را برمی‌گرداند؛ `unitFactors` به‌صورت فهرستی مرتب‌شده بر اساس واحد ذخیره می‌شود
+- [ ] T021 پیاده‌سازی `DraftRuleSet`، `ApproveRuleSet`، `GetRuleSet` (بر اساس نسخه یا نسخه نافذ در یک تاریخ) در `chaincode/conformity/ruleset.go`
+- [ ] T022 ثبت قرارداد و مسیریابی همه توابع در `chaincode/conformity/contract.go` و `chaincode/conformity/main.go` (نقطه ورود chaincode-as-a-service)
+- [ ] T023 نوشتن `network/scripts/seed.sh` که کاربران اولیه را با ویژگی‌های Fabric CA ثبت‌نام می‌کند، شرکت‌کنندگان را ثبت می‌کند، و `testdata/rulesets/iec60335-1-ed6-v1.json` را از طریق `peer chaincode invoke` پیش‌نویس (`techofficer1`) و تأیید (`techofficer2`) می‌کند؛ ایجاد آن داده آزمون مجموعه قواعد با دست‌کم یک آزمون عددی با حد شامل (`IR_MIN`، `MOhm`، حداقل `"2"`)، یکی با حداکثر غیرشامل و ضریب واحد (`LEAK_MAX`، `mA`، `A -> mA = 1000`)، و یک آزمون کیفی (`LABEL`)
 
-### Implementation for User Story 1
+### هسته gateway
 
-- [ ] T046 [US1] Implement the consignment state machine table (all transitions in data-model.md "Consignment state machine"; anything else → `ERR_STATE`) in `chaincode/conformity/statemachine.go`
-- [ ] T047 [US1] Implement `RegisterConsignment`, `CorrectConsignment`, `SplitConsignment`, `GetConsignment` in `chaincode/conformity/consignment.go`
-- [ ] T048 [P] [US1] Implement `AttachDocument`, `RecordDocumentRemoval`, `VerifyDocument` in `chaincode/conformity/documents.go`
-- [ ] T049 [P] [US1] Implement `GetHistory` (via `GetHistoryForKey` on the consignment and its child keys) in `chaincode/conformity/history.go`
-- [ ] T050 [P] [US1] Implement importer personal-data store (never sent to chain) in `gateway/internal/store/importers.go`
-- [ ] T051 [P] [US1] Implement document store in `gateway/internal/store/documents.go`: save bytes ≤ 25 MB, compute SHA-256, null bytes and set `removed_at` on legal deletion
-- [ ] T052 [US1] Implement endpoints `POST /consignments`, `GET /consignments/{id}`, `GET /consignments/{id}/history`, `POST /consignments/{id}/corrections`, `POST /consignments/{id}/split`, `POST|GET|DELETE /consignments/{id}/documents[/{docId}]`, `GET /consignments/{id}/documents/{docId}/verify` in `gateway/internal/api/consignments.go`; importers see only own consignments (FR-021)
-- [ ] T053 [US1] Add projector handlers for `RegisterConsignment`, `CorrectConsignment`, `SplitConsignment`, `AttachDocument`, `RecordDocumentRemoval` writing `rm_consignment` in `gateway/internal/projector/consignments.go`
-- [ ] T054 [US1] Implement `GET /consignments` with filters `status`, `category`, `standard`, `importer`, `from`, `to` from the read model in `gateway/internal/api/consignments_list.go`
-- [ ] T055 [P] [US1] Build inspector pages `web/src/pages/inspector/RegisterConsignment.tsx` (form + document upload, field errors in fa/en) and `web/src/pages/ConsignmentList.tsx`
-- [ ] T056 [US1] Build `web/src/pages/ConsignmentDetail.tsx` with history timeline (actor, Jalali/Gregorian time), correction dialog, and per-document verify status
-- [ ] T057 [P] [US1] Component test for registration validation messages in `web/tests/RegisterConsignment.test.tsx`
+- [ ] T024 پیاده‌سازی بارگذاری پیکربندی از متغیرهای محیطی در `gateway/internal/config/config.go`: MSP سازمان، فهرست مرتب endpointهای peer (ابتدا peer خودی، peer سازمان StdOrg به‌عنوان جایگزین برای gatewayهای آزمایشگاه)، URL پایگاه داده، صادرکننده/کلاینت OIDC، رله SMTP، مسیر فایل کلید پوشش‌دهنده کلید، نشانی شنود
+- [ ] T025 نوشتن طرح‌واره برون‌زنجیره‌ای `gateway/migrations/001_init.sql` برای جدول‌های `importer`، `app_user` (`calendar` در `jalali`/`gregorian`، `locale` در `fa`/`en`)، `user_key`، `document` (CHECK `size <= 26214400`)، `results_upload`، `notification`، `rm_consignment`، `rm_verdict`، `rm_decision`، `rm_disposition`، `projection_checkpoint`؛ اعمال مهاجرت‌های تعبیه‌شده به‌ترتیب هنگام راه‌اندازی از `gateway/internal/store/migrate.go`
+- [ ] T026 [P] پیاده‌سازی pool مربوط به pgx و پرس‌وجوهای کاربر/کلید در `gateway/internal/store/store.go` و `gateway/internal/store/users.go`
+- [ ] T027 [P] پیاده‌سازی پوشش/بازگشایی AES-256-GCM کلیدهای خصوصی کاربران با فایل کلید پوشش‌دهنده در `gateway/internal/keys/keys.go` همراه با آزمون رفت‌وبرگشت `gateway/internal/keys/keys_test.go` (`// ponytail: file wrapping key, move to HSM for production`)
+- [ ] T028 پیاده‌سازی کلاینت Fabric در `gateway/internal/fabric/client.go`: امضاکننده به ازای هر درخواست ساخته‌شده از کلید بازگشایی‌شده کاربر احرازهویت‌شده، `Submit`/`Evaluate`، جابه‌جایی خودکار در فهرست peerهای پیکربندی‌شده، استخراج کد `ERR_*` از خطاهای chaincode، بازگرداندن `txId`
+- [ ] T029 [P] پیاده‌سازی ثبت‌نام کاربر با Fabric CA (register + enroll با ویژگی‌های `role`، `participantId`، ذخیره کلید پوشش‌داده‌شده) در `gateway/internal/fabric/enroll.go`
+- [ ] T030 پیاده‌سازی میان‌افزار bearer مربوط به OIDC در `gateway/internal/api/auth.go` (تأییدکننده go-oidc، نگاشت `sub` به `app_user`، نقش‌ها از توکن، الزام ادعای عامل دوم `acr` برای همه نقش‌ها به‌جز `importer`)
+- [ ] T031 [P] پیاده‌سازی نگاشت خطا در `gateway/internal/api/errors.go` (`ERR_INVALID` 422، `ERR_FORBIDDEN`/`ERR_SOD` 403، `ERR_NOT_FOUND` 404، `ERR_STATE` 409، `ERR_HASH_MISMATCH` 409؛ بدنه `{code, message, details}`) و فهرست پیام‌های fa/en در `gateway/internal/api/messages.go` که بر اساس `Accept-Language` انتخاب می‌شود
+- [ ] T032 پیاده‌سازی مسیریاب و سرور در `gateway/internal/api/router.go` و `gateway/cmd/gateway/main.go` با `/healthz`، `/metrics`، ثبت‌کننده JSON مبتنی بر slog که فیلدهای `txId` و `consignmentId` را می‌افزاید، و ارائه SPA ساخته‌شده از `web/dist`
+- [ ] T033 پیاده‌سازی اسکلت projector رویدادهای بلوک در `gateway/internal/projector/projector.go`: ازسرگیری از `projection_checkpoint`، توزیع رویدادها بر اساس نام به handlerهای ثبت‌شده، به‌روزرسانی checkpoint در همان تراکنش پایگاه داده
+- [ ] T034 پیاده‌سازی endpointهای شرکت‌کنندگان `POST /api/v1/participants` و `POST /api/v1/participants/{id}/revoke` (مدیر) در `gateway/internal/api/participants.go`
 
-**Checkpoint**: US1 works alone — consignments registered, corrected, tamper detected
+### پوسته وب
 
----
+- [ ] T035 [P] راه‌اندازی i18n در `web/src/i18n/index.ts` با `web/src/i18n/fa.json` (پیش‌فرض) و `web/src/i18n/en.json`؛ تنظیم `<html lang>` و `<html dir="rtl|ltr">` هنگام تغییر زبان؛ استفاده انحصاری از ویژگی‌های منطقی CSS در `web/src/styles.css`
+- [ ] T036 [P] پیاده‌سازی `formatDate`/`formatDateTime` در `web/src/lib/date.ts` با استفاده از `Intl.DateTimeFormat('fa-IR-u-ca-persian')` یا `'en-GB'` بر اساس تقویم کاربر، ورودی همواره رشته‌های ISO با زمان UTC؛ آزمون در `web/tests/date.test.ts`
+- [ ] T037 پیاده‌سازی ورود OIDC با `oidc-client-ts` در `web/src/auth.ts` و پوشش API در `web/src/lib/api.ts` (توکن bearer، `Accept-Language`، کد خطا → پیام ترجمه‌شده)
+- [ ] T038 پیاده‌سازی پوسته برنامه با مسیرهای مبتنی بر نقش و تنظیمات کاربر (زبان، تقویم) در `web/src/App.tsx` و `web/src/pages/Settings.tsx`
 
-## Phase 4: User Story 2 - Automated Conformity Assessment from Test Results (Priority: P2)
+### زیرساخت آزمون یکپارچگی
 
-**Goal**: Labs submit results (form or CSV); chaincode computes deterministic verdicts citing rule-set version
+- [ ] T039 پیاده‌سازی توابع کمکی یکپارچگی در `tests/integration/harness_test.go`: توکن‌ها از طریق `network/scripts/token.sh <user>`، توابع کمکی HTTP مبتنی بر JSON برای `:8080`/`:8081`، `dockerStop`/`dockerStart`، دسترسی مستقیم به پایگاه داده برای آزمون‌های دست‌کاری
 
-**Independent Test**: quickstart.md Scenario 2 — pass, boundary, fail, missing, bad-row CSV, reassess identical
-
-### Tests for User Story 2 ⚠️ (write first, must fail)
-
-- [ ] T058 [P] [US2] Table-driven tests in `chaincode/conformity/assess_test.go`: all within limits → `Conforming`; value equal to inclusive limit → pass, equal to exclusive limit → fail; any fail → `NonConforming` with `measured` and `limit`; missing required test → `missing` + `RequiresReview`; two differing results same sample/test → `conflict` + `RequiresReview`; `A` converted to `mA` by factor; unknown unit → `unitError`; no approved rule set in force on `arrivalDate` → `RequiresReview`; qualitative `pass`/`fail`; same inputs + version → identical verdict and `inputsHash`; verdict cites version in force on `arrivalDate`, not latest
-- [ ] T059 [P] [US2] Tests in `chaincode/conformity/results_test.go`: `RecordSample` by `inspector`, `takenAt` "≥ arrivalDate", status `Registered` → `Sampling`; `SubmitResults` by `lab` whose MSP equals sample `assignedLabMsp`; `testCode` "Must exist in applicable rule set"; `value` decimal string required for numeric, `passFail` for qualitative; any invalid result rejects the whole batch; status → `ResultsReceived`
-- [ ] T060 [P] [US2] Tests in `chaincode/conformity/manual_verdict_test.go`: `RecordManualVerdict` by `assessor` requires justification, sets `manual=true`; `ReassessDryRun` writes nothing and returns the original verdict
-- [ ] T061 [P] [US2] Tests in `gateway/internal/resultsfile/validate_test.go` per contracts/results-file-template.md: exact header, Persian/Arabic digits rejected, max 18 significant digits, `pass_fail` only `pass`/`fail`, `method` max 100 chars, max 5,000 rows and 5 MB, duplicate `(sample_id, test_code)` rejected, every error reported as `{row, column, code, message}`
-- [ ] T062 [P] [US2] Create CSV fixtures `testdata/results-pass.csv`, `testdata/results-boundary.csv`, `testdata/results-fail.csv`, `testdata/results-missing.csv`, `testdata/results-bad-row.csv` matching `testdata/rulesets/iec60335-1-ed6-v1.json`
-- [ ] T063 [US2] Integration test for quickstart Scenario 2 in `tests/integration/us2_assessment_test.go`
-
-### Implementation for User Story 2
-
-- [ ] T064 [P] [US2] Implement `RecordSample` in `chaincode/conformity/samples.go`
-- [ ] T065 [P] [US2] Implement `SubmitResults` in `chaincode/conformity/results.go`
-- [ ] T066 [US2] Implement pure `evaluate(ruleSet, results) Verdict` using `shopspring/decimal` and sorted iteration, plus `AssessConsignment` (roles `assessor`, `service`), `RecordManualVerdict`, `ReassessDryRun` in `chaincode/conformity/assess.go`
-- [ ] T067 [P] [US2] Implement CSV validation in `gateway/internal/resultsfile/validate.go`
-- [ ] T068 [US2] Implement endpoints `POST /consignments/{id}/samples`, `POST /results`, `POST /results/upload`, `POST /consignments/{id}/assess`, `POST /consignments/{id}/manual-verdict`, `POST /consignments/{id}/reassess` in `gateway/internal/api/results.go`; no automatic assessment here (lab gateways have no `service` identity)
-- [ ] T069 [US2] Add projector handlers for `RecordSample`, `SubmitResults`, `AssessConsignment`, `RecordManualVerdict` writing `rm_consignment`/`rm_verdict` in `gateway/internal/projector/verdicts.go`; on a `SubmitResults` event, the StdOrg gateway's projector calls `AssessConsignment` with the StdOrg `service` identity (lab gateways skip this step)
-- [ ] T070 [P] [US2] Build lab pages `web/src/pages/lab/ResultsEntry.tsx` and `web/src/pages/lab/ResultsUpload.tsx` (per-row error table)
-- [ ] T071 [US2] Add sample recording to `web/src/pages/ConsignmentDetail.tsx` and verdict panel `web/src/components/VerdictPanel.tsx` (per-test outcome, measured vs limit, rule-set version, manual flag)
-
-**Checkpoint**: US1 + US2 work — results produce reproducible verdicts
+**نقطه بازبینی**: شبکه بالا آمده، chaincode با شرکت‌کنندگان و مجموعه قواعد آزمایشی مستقر شده، gateway کاربران را احرازهویت می‌کند و به ازای هر شخص امضا می‌کند، پوسته وب وارد می‌شود
 
 ---
 
-## Phase 5: User Story 3 - Assessor Decision, Override, and Certificate Record (Priority: P3)
+## فاز 3: داستان کاربری 1 - ثبت محموله ورودی به‌عنوان رکوردی ضددست‌کاری (اولویت: P1) 🎯 MVP
 
-**Goal**: Assessors confirm/override with justification; certificates or rejections recorded; appeals and dispositions tracked; importers notified
+**هدف**: بازرسان محموله‌ها را همراه با اسناد ثبت می‌کنند؛ تاریخچه فقط‌افزودنی است؛ اسناد تغییریافته شناسایی می‌شوند
 
-**Independent Test**: quickstart.md Scenario 3
+**آزمون مستقل**: quickstart.md سناریوی 1 — ثبت، اصلاح، دست‌کاری بایت‌های فاکتور، نمایش `mismatch` در راستی‌آزمایی، نبود `standardRef` → 422
 
-### Tests for User Story 3 ⚠️ (write first, must fail)
+### آزمون‌های داستان کاربری 1 ⚠️ (ابتدا نوشته شوند، **باید** شکست بخورند)
 
-- [ ] T072 [P] [US3] Tests in `chaincode/conformity/decision_test.go`: `DecideConsignment` by `assessor`; `override` without `justification` → `ERR_INVALID` ("max 2000 chars"); `certificateRef` "Required when outcome `Conforming`"; `rejectionReasons` "Required when outcome `NonConforming`"; caller who submitted any result for the consignment, or from the submitting lab MSP → `ERR_SOD`; automated verdict and override both remain in history; a `documentChecks` hash that differs from the on-chain `sha256` → `ERR_HASH_MISMATCH`, and a missing check for any non-removed document → `ERR_INVALID`
-- [ ] T073 [P] [US3] Tests in `chaincode/conformity/appeal_test.go`: `FileAppeal` only by `service` for the importer of record, `grounds` "max 2000 chars", status → `UnderAppeal`; `ResolveAppeal` by the original decider → `ERR_SOD`; resolution creates `appealOutcome` decision with `previousDecisionId`
-- [ ] T074 [P] [US3] Tests in `chaincode/conformity/disposition_test.go`: `ChooseDisposition` requires final `NonConforming`, `type` in `reExport`/`destruction`/`rework`, status → `DispositionPending`; `CompleteDisposition` by `inspector` with `evidenceDocumentIds` "≥ 1 on completion"; `rework` → `Sampling`, others → `Closed`
-- [ ] T075 [US3] Integration test for quickstart Scenario 3 in `tests/integration/us3_decisions_test.go`
+- [ ] T040 [P] [US1] آزمون‌ها در `chaincode/conformity/consignment_test.go`: `RegisterConsignment` فقط توسط `inspector`؛ `importerId`، `productCategory`، `standardRef` `{number, edition}` الزامی؛ `productDescription` «حداکثر 500 نویسه»؛ `quantity` «> 0»؛ `origin` «ISO 3166-1 alpha-2»؛ `arrivalDate` «≤ زمان ثبت»؛ وضعیت به `Registered` تبدیل می‌شود؛ شناسه تکراری → `ERR_INVALID`
+- [ ] T041 [P] [US1] آزمون‌ها در `chaincode/conformity/correction_test.go`: `CorrectConsignment` به `reason` نیاز دارد («الزامی، حداکثر 500 نویسه»)؛ `consignmentId` و `registeredBy` قابل اصلاح نیستند؛ تاریخچه کلید مقادیر قدیم و جدید را نگه می‌دارد؛ رویداد حاوی `{targetId, field, oldValue, newValue, reason, by}` است
+- [ ] T042 [P] [US1] آزمون‌ها در `chaincode/conformity/documents_test.go`: `AttachDocument` فقط‌افزودنی توسط `inspector`/`lab`؛ `sha256` هگزادسیمال «64 نویسه»؛ `kind` در `invoice`، `packingList`، `photo`، `testReport`، `dispositionEvidence`، `other`؛ `RecordDocumentRemoval` فقط برای مدیر، `removed` «هرگز دوباره به false برنمی‌گردد»؛ `VerifyDocument` مقدار `ok`/`mismatch`/`removed` را برمی‌گرداند
+- [ ] T043 [P] [US1] آزمون‌ها در `chaincode/conformity/split_test.go`: `SplitConsignment` محموله‌های فرزند با `parentId` ایجاد می‌کند، والد → `Split`؛ در وضعیت‌های نهایی با `ERR_STATE` رد می‌شود
+- [ ] T044 [P] [US1] آزمون‌ها در `chaincode/conformity/history_test.go`: `GetHistory` مدخل‌ها را مرتب‌شده بر اساس مهر زمانی همراه با `txId`، `timestamp`، `function`، `actor`، `payload` برمی‌گرداند؛ برای `importer` و `lab` رد می‌شود
+- [ ] T045 [P] [US1] آزمون یکپارچگی برای سناریوی 1 در quickstart در `tests/integration/us1_registration_test.go`
 
-### Implementation for User Story 3
+### پیاده‌سازی داستان کاربری 1
 
-- [ ] T076 [P] [US3] Implement `DecideConsignment` in `chaincode/conformity/decision.go`
-- [ ] T077 [P] [US3] Implement `FileAppeal`, `ResolveAppeal` in `chaincode/conformity/appeal.go`
-- [ ] T078 [P] [US3] Implement `ChooseDisposition`, `CompleteDisposition` in `chaincode/conformity/disposition.go`
-- [ ] T079 [P] [US3] Implement notifications (SMTP via `net/smtp` + `notification` table rows, fa/en templates) in `gateway/internal/notify/notify.go`
-- [ ] T080 [US3] Implement endpoints `POST /consignments/{id}/decisions`, `POST /consignments/{id}/appeals`, `POST /appeals/{id}/resolve`, `POST /consignments/{id}/dispositions`, `POST /dispositions/{id}/complete`, `GET /me/notifications` in `gateway/internal/api/decisions.go`; notify importer on final decision and appeal outcome; before calling `DecideConsignment`, recompute the SHA-256 of every non-removed document from `gateway/internal/store/documents.go` and pass them as `documentChecks`
-- [ ] T081 [US3] Add projector handlers for decisions, appeals, dispositions writing `rm_decision`/`rm_disposition` (including certificate ref index) in `gateway/internal/projector/decisions.go`
-- [ ] T082 [P] [US3] Build `web/src/pages/assessor/DecisionForm.tsx` (confirm/override, justification required for override) and `web/src/pages/inspector/Disposition.tsx`
-- [ ] T083 [P] [US3] Build importer portal pages `web/src/pages/importer/MyConsignments.tsx`, `web/src/pages/importer/Appeal.tsx`, `web/src/pages/importer/Notifications.tsx`
+- [ ] T046 [US1] پیاده‌سازی جدول ماشین حالت محموله (همه گذارهای بخش «Consignment state machine» در data-model.md؛ هر گذار دیگر → `ERR_STATE`) در `chaincode/conformity/statemachine.go`
+- [ ] T047 [US1] پیاده‌سازی `RegisterConsignment`، `CorrectConsignment`، `SplitConsignment`، `GetConsignment` در `chaincode/conformity/consignment.go`
+- [ ] T048 [P] [US1] پیاده‌سازی `AttachDocument`، `RecordDocumentRemoval`، `VerifyDocument` در `chaincode/conformity/documents.go`
+- [ ] T049 [P] [US1] پیاده‌سازی `GetHistory` (از طریق `GetHistoryForKey` روی محموله و کلیدهای فرزند آن) در `chaincode/conformity/history.go`
+- [ ] T050 [P] [US1] پیاده‌سازی مخزن داده‌های شخصی واردکننده (هرگز به زنجیره ارسال نمی‌شود) در `gateway/internal/store/importers.go`
+- [ ] T051 [P] [US1] پیاده‌سازی مخزن اسناد در `gateway/internal/store/documents.go`: ذخیره بایت‌ها ≤ 25 MB، محاسبه SHA-256، تهی‌کردن بایت‌ها و تنظیم `removed_at` هنگام حذف قانونی
+- [ ] T052 [US1] پیاده‌سازی endpointهای `POST /consignments`، `GET /consignments/{id}`، `GET /consignments/{id}/history`، `POST /consignments/{id}/corrections`، `POST /consignments/{id}/split`، `POST|GET|DELETE /consignments/{id}/documents[/{docId}]`، `GET /consignments/{id}/documents/{docId}/verify` در `gateway/internal/api/consignments.go`؛ واردکنندگان فقط محموله‌های خود را می‌بینند (FR-021)
+- [ ] T053 [US1] افزودن handlerهای projector برای `RegisterConsignment`، `CorrectConsignment`، `SplitConsignment`، `AttachDocument`، `RecordDocumentRemoval` که در `rm_consignment` می‌نویسند در `gateway/internal/projector/consignments.go`
+- [ ] T054 [US1] پیاده‌سازی `GET /consignments` با فیلترهای `status`، `category`، `standard`، `importer`، `from`، `to` از مدل خواندنی در `gateway/internal/api/consignments_list.go`
+- [ ] T055 [P] [US1] ساخت صفحات بازرس `web/src/pages/inspector/RegisterConsignment.tsx` (فرم + بارگذاری سند، خطاهای فیلد به fa/en) و `web/src/pages/ConsignmentList.tsx`
+- [ ] T056 [US1] ساخت `web/src/pages/ConsignmentDetail.tsx` با خط زمانی تاریخچه (کنشگر، زمان جلالی/میلادی)، پنجره گفت‌وگوی اصلاح، و وضعیت راستی‌آزمایی هر سند
+- [ ] T057 [P] [US1] آزمون مؤلفه برای پیام‌های اعتبارسنجی ثبت در `web/tests/RegisterConsignment.test.tsx`
 
-**Checkpoint**: Full decision lifecycle works end to end
-
----
-
-## Phase 6: User Story 4 - Independent Audit and Verification (Priority: P4)
-
-**Goal**: Auditors verify history, documents, and verdicts read-only, matching lab peers
-
-**Independent Test**: quickstart.md Scenario 4
-
-- [ ] T084 [P] [US4] Test in `chaincode/conformity/auditor_readonly_test.go`: every write function called with role `auditor` → `ERR_FORBIDDEN`; `GetHistory`, `VerifyDocument`, `ReassessDryRun` allowed
-- [ ] T085 [P] [US4] Write `network/scripts/peer-query.sh <org> <function> <args...>` running `peer chaincode query` against that org's peer
-- [ ] T086 [US4] Integration test for quickstart Scenario 4 in `tests/integration/us4_audit_test.go` (history via gateway equals history from `peer0.lab1`)
-- [ ] T087 [US4] Implement `GET /certificates/{ref}` in `gateway/internal/api/certificates.go`
-- [ ] T088 [US4] Build `web/src/pages/auditor/AuditLookup.tsx` (by consignment ID or certificate number) and `web/src/pages/auditor/AuditConsignment.tsx` (history, verify all documents, reassess and show match/mismatch with recorded verdict)
-
-**Checkpoint**: Auditors can verify any decision without operator help
+**نقطه بازبینی**: US1 به‌تنهایی کار می‌کند — محموله‌ها ثبت و اصلاح می‌شوند، دست‌کاری شناسایی می‌شود
 
 ---
 
-## Phase 7: User Story 5 - Manage Conformity Rule Sets (Priority: P5)
+## فاز 4: داستان کاربری 2 - ارزیابی خودکار انطباق از نتایج آزمون (اولویت: P2)
 
-**Goal**: Technical officers draft and approve rule-set versions through the UI with effective dates
+**هدف**: آزمایشگاه‌ها نتایج را (از طریق فرم یا CSV) ارسال می‌کنند؛ chaincode رأی‌های قطعی را با استناد به نسخه مجموعه قواعد محاسبه می‌کند
 
-**Independent Test**: quickstart.md Scenario 5
+**آزمون مستقل**: quickstart.md سناریوی 2 — قبول، مرزی، رد، ناقص، CSV با سطر نادرست، ارزیابی مجدد یکسان
 
-- [ ] T089 [US5] Integration test for quickstart Scenario 5 in `tests/integration/us5_rulesets_test.go` (self-approval `403 ERR_SOD`; future `effectiveFrom` keeps v1 in force; old verdicts still cite v1)
-- [ ] T090 [US5] Implement endpoints `GET /rule-sets`, `GET /rule-sets/{id}/versions/{v}`, `POST /rule-sets`, `POST /rule-sets/{id}/versions/{v}/approve` in `gateway/internal/api/rulesets.go`
-- [ ] T091 [P] [US5] Build `web/src/pages/techOfficer/RuleSetList.tsx` and `web/src/pages/techOfficer/RuleSetEditor.tsx` (tests with clause, unit, min/max, inclusivity, required, samplesRequired; unit factor table; effective date)
+### آزمون‌های داستان کاربری 2 ⚠️ (ابتدا نوشته شوند، **باید** شکست بخورند)
 
-**Checkpoint**: All user stories independently functional
+- [ ] T058 [P] [US2] آزمون‌های جدول‌محور در `chaincode/conformity/assess_test.go`: همه در محدوده حدود → `Conforming`؛ مقدار برابر با حد شامل → قبول، برابر با حد غیرشامل → رد؛ هر ردی → `NonConforming` همراه با `measured` و `limit`؛ نبود آزمون الزامی → `missing` + `RequiresReview`؛ دو نتیجه متفاوت برای یک نمونه/آزمون → `conflict` + `RequiresReview`؛ تبدیل `A` به `mA` با ضریب؛ واحد ناشناخته → `unitError`؛ نبود مجموعه قواعد تأییدشده نافذ در `arrivalDate` → `RequiresReview`؛ کیفی `pass`/`fail`؛ ورودی‌ها + نسخه یکسان → رأی و `inputsHash` یکسان؛ رأی به نسخه نافذ در `arrivalDate` استناد می‌کند، نه آخرین نسخه
+- [ ] T059 [P] [US2] آزمون‌ها در `chaincode/conformity/results_test.go`: `RecordSample` توسط `inspector`، `takenAt` «≥ arrivalDate»، وضعیت `Registered` → `Sampling`؛ `SubmitResults` توسط `lab` که MSP آن برابر با `assignedLabMsp` نمونه است؛ `testCode` «باید در مجموعه قواعد مربوط وجود داشته باشد»؛ `value` به‌صورت رشته اعشاری برای آزمون عددی و `passFail` برای آزمون کیفی الزامی است؛ هر نتیجه نامعتبر کل دسته را رد می‌کند؛ وضعیت → `ResultsReceived`
+- [ ] T060 [P] [US2] آزمون‌ها در `chaincode/conformity/manual_verdict_test.go`: `RecordManualVerdict` توسط `assessor` به توجیه نیاز دارد و `manual=true` را تنظیم می‌کند؛ `ReassessDryRun` چیزی نمی‌نویسد و رأی اصلی را برمی‌گرداند
+- [ ] T061 [P] [US2] آزمون‌ها در `gateway/internal/resultsfile/validate_test.go` مطابق contracts/results-file-template.md: سرستون دقیق، رد ارقام فارسی/عربی، حداکثر 18 رقم معنادار، `pass_fail` فقط `pass`/`fail`، `method` حداکثر 100 نویسه، حداکثر 5,000 سطر و 5 MB، رد `(sample_id, test_code)` تکراری، گزارش هر خطا به‌صورت `{row, column, code, message}`
+- [ ] T062 [P] [US2] ایجاد داده‌های آزمون CSV شامل `testdata/results-pass.csv`، `testdata/results-boundary.csv`، `testdata/results-fail.csv`، `testdata/results-missing.csv`، `testdata/results-bad-row.csv` منطبق با `testdata/rulesets/iec60335-1-ed6-v1.json`
+- [ ] T063 [US2] آزمون یکپارچگی برای سناریوی 2 در quickstart در `tests/integration/us2_assessment_test.go`
 
----
+### پیاده‌سازی داستان کاربری 2
 
-## Phase 8: Polish & Cross-Cutting Concerns
+- [ ] T064 [P] [US2] پیاده‌سازی `RecordSample` در `chaincode/conformity/samples.go`
+- [ ] T065 [P] [US2] پیاده‌سازی `SubmitResults` در `chaincode/conformity/results.go`
+- [ ] T066 [US2] پیاده‌سازی تابع خالص `evaluate(ruleSet, results) Verdict` با استفاده از `shopspring/decimal` و پیمایش مرتب، به‌علاوه `AssessConsignment` (نقش‌های `assessor`، `service`)، `RecordManualVerdict`، `ReassessDryRun` در `chaincode/conformity/assess.go`
+- [ ] T067 [P] [US2] پیاده‌سازی اعتبارسنجی CSV در `gateway/internal/resultsfile/validate.go`
+- [ ] T068 [US2] پیاده‌سازی endpointهای `POST /consignments/{id}/samples`، `POST /results`، `POST /results/upload`، `POST /consignments/{id}/assess`، `POST /consignments/{id}/manual-verdict`، `POST /consignments/{id}/reassess` در `gateway/internal/api/results.go`؛ در اینجا ارزیابی خودکاری انجام نمی‌شود (gatewayهای آزمایشگاه هویت `service` ندارند)
+- [ ] T069 [US2] افزودن handlerهای projector برای `RecordSample`، `SubmitResults`، `AssessConsignment`، `RecordManualVerdict` که در `rm_consignment`/`rm_verdict` می‌نویسند در `gateway/internal/projector/verdicts.go`؛ با رخداد `SubmitResults`، projector مربوط به gateway سازمان StdOrg تابع `AssessConsignment` را با هویت `service` سازمان StdOrg فراخوانی می‌کند (gatewayهای آزمایشگاه از این گام صرف‌نظر می‌کنند)
+- [ ] T070 [P] [US2] ساخت صفحات آزمایشگاه `web/src/pages/lab/ResultsEntry.tsx` و `web/src/pages/lab/ResultsUpload.tsx` (جدول خطا به ازای هر سطر)
+- [ ] T071 [US2] افزودن ثبت نمونه به `web/src/pages/ConsignmentDetail.tsx` و پنل رأی `web/src/components/VerdictPanel.tsx` (نتیجه هر آزمون، مقدار اندازه‌گیری‌شده در برابر حد، نسخه مجموعه قواعد، نشان دستی)
 
-- [ ] T092 Implement `GET /reports/summary?groupBy=status|category|standard|importer&from=&to=` including override counts and pending dispositions in `gateway/internal/api/reports.go`, and `web/src/pages/Reports.tsx`
-- [ ] T093 Resilience integration test for quickstart Scenario 6 in `tests/integration/resilience_test.go` (stop `peer0.lab1`, Lab1 submits via StdOrg peer, restart, histories match)
-- [ ] T094 [P] Add read-model rebuild command `gateway/cmd/rebuild-readmodel/main.go` (truncate `rm_*`, reset checkpoint, replay from block 0)
-- [ ] T095 [P] Add `network/scripts/add-lab.sh` (create lab MSP, channel config update, regenerate endorsement policy with the new lab, chaincode lifecycle approve/commit by all orgs) and document it in `README.md`
-- [ ] T096 [P] Add Prometheus + blackbox probe config `network/config/prometheus/prometheus.yml` probing `/healthz` and an authenticated read every minute during working hours (SC-009)
-- [ ] T097 [P] Playwright smoke test per story in `web/tests/e2e/us1.spec.ts` … `web/tests/e2e/us5.spec.ts`, each run in both `fa` and `en`
-- [ ] T098 [P] Translation completeness test in `web/tests/i18n.test.ts` (every key in `fa.json` exists in `en.json` and vice versa)
-- [ ] T099 Security hardening in `gateway/internal/api/router.go`: CSP and security headers, upload MIME sniffing against declared `kind`, request size limits (25 MB documents, 5 MB results files)
-- [ ] T100 [P] Load test behind build tag `load` in `tests/load/load_test.go`: 500 consignments/day profile with 50 concurrent users; assert 95% of verdicts within 1 minute of results submission (SC-002, SC-008)
-- [ ] T101 Run every quickstart.md scenario and `make test-chaincode test-integration test-web`; record results in `specs/001-goods-conformity-ledger/quickstart.md` notes
-- [ ] T102 Write `network/scripts/upgrade-chaincode.sh` (package new version, approve by every org, commit with the same endorsement policy, record version and approving MSPs in the release entry) and the upgrade procedure section in `README.md`; add integration test `tests/integration/upgrade_test.go` showing consignments, verdicts, and history registered under v1 are unchanged and readable after upgrading to v2
-- [ ] T103 [P] Add `CHANGELOG.md` with sections "Contract versions" and "Rule-set versions" (version, effective date, approvers) and a CI step in `.github/workflows/ci.yml` that fails when `chaincode/` or `testdata/rulesets/` changes without a `CHANGELOG.md` change
-
----
-
-## Dependencies & Execution Order
-
-### Phase Dependencies
-
-- **Setup (Phase 1)**: none
-- **Foundational (Phase 2)**: after Setup — BLOCKS all stories
-- **User Stories (Phases 3–7)**: after Foundational
-- **Polish (Phase 8)**: after the stories it touches
-
-### User Story Dependencies
-
-- **US1 (P1)**: after Foundational; no story dependencies
-- **US2 (P2)**: needs consignments from US1 (T046, T047) and the rule set from Foundational (T021, T023)
-- **US3 (P3)**: needs verdicts from US2 (T066)
-- **US4 (P4)**: read-only over US1–US3 data; can start after US1 with partial scenarios
-- **US5 (P5)**: chaincode already in Foundational; needs only gateway + web; can run in parallel with US1
-
-### Within Each User Story
-
-- Chaincode tests first and failing (Constitution V), then chaincode implementation
-- Chaincode before gateway endpoints; endpoints before projector handlers and web pages
-- Integration test passes before the story checkpoint
-
-### Parallel Opportunities
-
-- Setup: T003, T004, T005, T006, T011
-- Foundational: T013, T014; T026, T027, T029, T031; T035, T036
-- US1: all tests T040–T045; T048, T049, T050, T051; T055, T057
-- US2: T058–T062; T064, T065, T067; T070
-- US3: T072–T074; T076–T079; T082, T083
-- US5 can be built by a second developer while US1 is in progress
+**نقطه بازبینی**: US1 + US2 کار می‌کنند — نتایج، رأی‌های بازتولیدپذیر ایجاد می‌کنند
 
 ---
 
-## Parallel Example: User Story 1
+## فاز 5: داستان کاربری 3 - تصمیم ارزیاب، بازنگری رأی، و ثبت گواهی (اولویت: P3)
+
+**هدف**: ارزیابان با ارائه توجیه، رأی را تأیید یا بازنگری می‌کنند؛ گواهی‌ها یا ردها ثبت می‌شوند؛ اعتراض‌ها و تعیین تکلیف‌ها پیگیری می‌شوند؛ به واردکنندگان اطلاع‌رسانی می‌شود
+
+**آزمون مستقل**: quickstart.md سناریوی 3
+
+### آزمون‌های داستان کاربری 3 ⚠️ (ابتدا نوشته شوند، **باید** شکست بخورند)
+
+- [ ] T072 [P] [US3] آزمون‌ها در `chaincode/conformity/decision_test.go`: `DecideConsignment` توسط `assessor`؛ `override` بدون `justification` → `ERR_INVALID` («حداکثر 2000 نویسه»)؛ `certificateRef` «هنگامی که نتیجه `Conforming` است الزامی است»؛ `rejectionReasons` «هنگامی که نتیجه `NonConforming` است الزامی است»؛ فراخوانی که هر نتیجه‌ای برای محموله ارسال کرده، یا از MSP آزمایشگاه ارسال‌کننده است → `ERR_SOD`؛ رأی خودکار و بازنگری رأی هر دو در تاریخچه باقی می‌مانند؛ هش `documentChecks` که با `sha256` روی زنجیره متفاوت باشد → `ERR_HASH_MISMATCH`، و نبود بررسی برای هر سند حذف‌نشده → `ERR_INVALID`
+- [ ] T073 [P] [US3] آزمون‌ها در `chaincode/conformity/appeal_test.go`: `FileAppeal` فقط توسط `service` برای واردکننده ثبت‌شده، `grounds` «حداکثر 2000 نویسه»، وضعیت → `UnderAppeal`؛ `ResolveAppeal` توسط تصمیم‌گیرنده اصلی → `ERR_SOD`؛ رسیدگی، تصمیمی از نوع `appealOutcome` با `previousDecisionId` ایجاد می‌کند
+- [ ] T074 [P] [US3] آزمون‌ها در `chaincode/conformity/disposition_test.go`: `ChooseDisposition` به `NonConforming` نهایی نیاز دارد، `type` در `reExport`/`destruction`/`rework`، وضعیت → `DispositionPending`؛ `CompleteDisposition` توسط `inspector` با `evidenceDocumentIds` «≥ 1 هنگام تکمیل»؛ `rework` → `Sampling`، سایر موارد → `Closed`
+- [ ] T075 [US3] آزمون یکپارچگی برای سناریوی 3 در quickstart در `tests/integration/us3_decisions_test.go`
+
+### پیاده‌سازی داستان کاربری 3
+
+- [ ] T076 [P] [US3] پیاده‌سازی `DecideConsignment` در `chaincode/conformity/decision.go`
+- [ ] T077 [P] [US3] پیاده‌سازی `FileAppeal`، `ResolveAppeal` در `chaincode/conformity/appeal.go`
+- [ ] T078 [P] [US3] پیاده‌سازی `ChooseDisposition`، `CompleteDisposition` در `chaincode/conformity/disposition.go`
+- [ ] T079 [P] [US3] پیاده‌سازی اعلان‌ها (SMTP از طریق `net/smtp` + سطرهای جدول `notification`، الگوهای fa/en) در `gateway/internal/notify/notify.go`
+- [ ] T080 [US3] پیاده‌سازی endpointهای `POST /consignments/{id}/decisions`، `POST /consignments/{id}/appeals`، `POST /appeals/{id}/resolve`، `POST /consignments/{id}/dispositions`، `POST /dispositions/{id}/complete`، `GET /me/notifications` در `gateway/internal/api/decisions.go`؛ اطلاع‌رسانی به واردکننده هنگام تصمیم نهایی و نتیجه اعتراض؛ پیش از فراخوانی `DecideConsignment`، SHA-256 هر سند حذف‌نشده از `gateway/internal/store/documents.go` دوباره محاسبه و به‌عنوان `documentChecks` ارسال شود
+- [ ] T081 [US3] افزودن handlerهای projector برای تصمیم‌ها، اعتراض‌ها، تعیین تکلیف‌ها که در `rm_decision`/`rm_disposition` می‌نویسند (شامل نمایه ارجاع گواهی) در `gateway/internal/projector/decisions.go`
+- [ ] T082 [P] [US3] ساخت `web/src/pages/assessor/DecisionForm.tsx` (تأیید/بازنگری رأی، توجیه برای بازنگری رأی الزامی است) و `web/src/pages/inspector/Disposition.tsx`
+- [ ] T083 [P] [US3] ساخت صفحات درگاه واردکننده `web/src/pages/importer/MyConsignments.tsx`، `web/src/pages/importer/Appeal.tsx`، `web/src/pages/importer/Notifications.tsx`
+
+**نقطه بازبینی**: چرخه کامل تصمیم از ابتدا تا انتها کار می‌کند
+
+---
+
+## فاز 6: داستان کاربری 4 - ممیزی و راستی‌آزمایی مستقل (اولویت: P4)
+
+**هدف**: ممیزان تاریخچه، اسناد، و رأی‌ها را به‌صورت فقط‌خواندنی و منطبق با peerهای آزمایشگاه راستی‌آزمایی می‌کنند
+
+**آزمون مستقل**: quickstart.md سناریوی 4
+
+- [ ] T084 [P] [US4] آزمون در `chaincode/conformity/auditor_readonly_test.go`: هر تابع نوشتنی که با نقش `auditor` فراخوانی شود → `ERR_FORBIDDEN`؛ `GetHistory`، `VerifyDocument`، `ReassessDryRun` مجاز هستند
+- [ ] T085 [P] [US4] نوشتن `network/scripts/peer-query.sh <org> <function> <args...>` که `peer chaincode query` را روی peer آن سازمان اجرا می‌کند
+- [ ] T086 [US4] آزمون یکپارچگی برای سناریوی 4 در quickstart در `tests/integration/us4_audit_test.go` (تاریخچه از طریق gateway برابر با تاریخچه از `peer0.lab1` است)
+- [ ] T087 [US4] پیاده‌سازی `GET /certificates/{ref}` در `gateway/internal/api/certificates.go`
+- [ ] T088 [US4] ساخت `web/src/pages/auditor/AuditLookup.tsx` (بر اساس شناسه محموله یا شماره گواهی) و `web/src/pages/auditor/AuditConsignment.tsx` (تاریخچه، راستی‌آزمایی همه اسناد، ارزیابی مجدد و نمایش انطباق/عدم انطباق با رأی ثبت‌شده)
+
+**نقطه بازبینی**: ممیزان می‌توانند هر تصمیمی را بدون کمک اپراتور راستی‌آزمایی کنند
+
+---
+
+## فاز 7: داستان کاربری 5 - مدیریت مجموعه قواعد انطباق (اولویت: P5)
+
+**هدف**: کارشناسان فنی نسخه‌های مجموعه قواعد را از طریق رابط کاربری با تاریخ‌های اعتبار پیش‌نویس و تأیید می‌کنند
+
+**آزمون مستقل**: quickstart.md سناریوی 5
+
+- [ ] T089 [US5] آزمون یکپارچگی برای سناریوی 5 در quickstart در `tests/integration/us5_rulesets_test.go` (خودتأییدی `403 ERR_SOD`؛ `effectiveFrom` آینده، v1 را نافذ نگه می‌دارد؛ رأی‌های قدیمی همچنان به v1 استناد می‌کنند)
+- [ ] T090 [US5] پیاده‌سازی endpointهای `GET /rule-sets`، `GET /rule-sets/{id}/versions/{v}`، `POST /rule-sets`، `POST /rule-sets/{id}/versions/{v}/approve` در `gateway/internal/api/rulesets.go`
+- [ ] T091 [P] [US5] ساخت `web/src/pages/techOfficer/RuleSetList.tsx` و `web/src/pages/techOfficer/RuleSetEditor.tsx` (آزمون‌ها با بند، واحد، حداقل/حداکثر، شامل‌بودن، الزامی‌بودن، samplesRequired؛ جدول ضرایب واحد؛ تاریخ اعتبار)
+
+**نقطه بازبینی**: همه داستان‌های کاربری به‌طور مستقل کار می‌کنند
+
+---
+
+## فاز 8: بهبود نهایی و موضوعات مشترک
+
+- [ ] T092 پیاده‌سازی `GET /reports/summary?groupBy=status|category|standard|importer&from=&to=` شامل شمار بازنگری‌های رأی و تعیین تکلیف‌های در انتظار در `gateway/internal/api/reports.go`، و `web/src/pages/Reports.tsx`
+- [ ] T093 آزمون یکپارچگی تاب‌آوری برای سناریوی 6 در quickstart در `tests/integration/resilience_test.go` (توقف `peer0.lab1`، ارسال Lab1 از طریق peer سازمان StdOrg، راه‌اندازی مجدد، تطابق تاریخچه‌ها)
+- [ ] T094 [P] افزودن فرمان بازسازی مدل خواندنی `gateway/cmd/rebuild-readmodel/main.go` (خالی‌کردن `rm_*`، بازنشانی checkpoint، بازپخش از بلوک 0)
+- [ ] T095 [P] افزودن `network/scripts/add-lab.sh` (ایجاد MSP آزمایشگاه، به‌روزرسانی پیکربندی کانال، بازتولید سیاست تأیید با آزمایشگاه جدید، approve/commit چرخه حیات chaincode توسط همه سازمان‌ها) و مستندسازی آن در `README.md`
+- [ ] T096 [P] افزودن پیکربندی Prometheus + کاوشگر blackbox در `network/config/prometheus/prometheus.yml` که `/healthz` و یک خواندن احرازهویت‌شده را در ساعات کاری هر دقیقه کاوش می‌کند (SC-009)
+- [ ] T097 [P] آزمون دود Playwright برای هر داستان در `web/tests/e2e/us1.spec.ts` … `web/tests/e2e/us5.spec.ts`، هر کدام در هر دو زبان `fa` و `en` اجرا شود
+- [ ] T098 [P] آزمون کامل‌بودن ترجمه در `web/tests/i18n.test.ts` (هر کلید در `fa.json` در `en.json` وجود داشته باشد و برعکس)
+- [ ] T099 مقاوم‌سازی امنیتی در `gateway/internal/api/router.go`: CSP و سرآیندهای امنیتی، تشخیص MIME بارگذاری‌ها در برابر `kind` اعلام‌شده، محدودیت اندازه درخواست (25 MB برای اسناد، 5 MB برای فایل‌های نتایج)
+- [ ] T100 [P] آزمون بار پشت برچسب ساخت `load` در `tests/load/load_test.go`: نیمرخ 500 محموله در روز با 50 کاربر هم‌زمان؛ اطمینان از اینکه 95% رأی‌ها در کمتر از 1 دقیقه پس از ارسال نتایج صادر می‌شوند (SC-002، SC-008)
+- [ ] T101 اجرای همه سناریوهای quickstart.md و `make test-chaincode test-integration test-web`؛ ثبت نتایج در یادداشت‌های `specs/001-goods-conformity-ledger/quickstart.md`
+- [ ] T102 نوشتن `network/scripts/upgrade-chaincode.sh` (بسته‌بندی نسخه جدید، تأیید توسط هر سازمان، commit با همان سیاست تأیید، ثبت نسخه و MSPهای تأییدکننده در مدخل انتشار) و بخش روال ارتقا در `README.md`؛ افزودن آزمون یکپارچگی `tests/integration/upgrade_test.go` که نشان دهد محموله‌ها، رأی‌ها، و تاریخچه ثبت‌شده تحت v1 پس از ارتقا به v2 بدون تغییر و قابل خواندن هستند
+- [ ] T103 [P] افزودن `CHANGELOG.md` با بخش‌های «نسخه‌های قرارداد» و «نسخه‌های مجموعه قواعد» (نسخه، تاریخ اعتبار، تأییدکنندگان) و یک گام CI در `.github/workflows/ci.yml` که هرگاه `chaincode/` یا `testdata/rulesets/` بدون تغییر در `CHANGELOG.md` تغییر کند، شکست می‌خورد
+
+---
+
+## وابستگی‌ها و ترتیب اجرا
+
+### وابستگی‌های فازها
+
+- **راه‌اندازی (فاز 1)**: ندارد
+- **زیربنایی (فاز 2)**: پس از راه‌اندازی — همه داستان‌ها را مسدود می‌کند
+- **داستان‌های کاربری (فازهای 3–7)**: پس از زیربنایی
+- **بهبود نهایی (فاز 8)**: پس از داستان‌هایی که به آن‌ها مربوط است
+
+### وابستگی‌های داستان‌های کاربری
+
+- **US1 (P1)**: پس از زیربنایی؛ بدون وابستگی به داستان دیگر
+- **US2 (P2)**: به محموله‌های US1 (T046، T047) و مجموعه قواعد فاز زیربنایی (T021، T023) نیاز دارد
+- **US3 (P3)**: به رأی‌های US2 (T066) نیاز دارد
+- **US4 (P4)**: فقط‌خواندنی روی داده‌های US1–US3؛ می‌تواند پس از US1 با سناریوهای جزئی آغاز شود
+- **US5 (P5)**: chaincode آن از قبل در فاز زیربنایی است؛ فقط به gateway + وب نیاز دارد؛ می‌تواند به‌موازات US1 اجرا شود
+
+### درون هر داستان کاربری
+
+- ابتدا آزمون‌های chaincode نوشته شوند و شکست بخورند (منشور V)، سپس پیاده‌سازی chaincode
+- chaincode پیش از endpointهای gateway؛ endpointها پیش از handlerهای projector و صفحات وب
+- آزمون یکپارچگی پیش از نقطه بازبینی داستان قبول شود
+
+### فرصت‌های موازی‌سازی
+
+- راه‌اندازی: T003، T004، T005، T006، T011
+- زیربنایی: T013، T014؛ T026، T027، T029، T031؛ T035، T036
+- US1: همه آزمون‌های T040–T045؛ T048، T049، T050، T051؛ T055، T057
+- US2: T058–T062؛ T064، T065، T067؛ T070
+- US3: T072–T074؛ T076–T079؛ T082، T083
+- US5 را می‌تواند توسعه‌دهنده دوم هم‌زمان با پیشرفت US1 بسازد
+
+---
+
+## نمونه موازی‌سازی: داستان کاربری 1
 
 ```bash
-# Write all failing chaincode tests together:
-Task: "Tests in chaincode/conformity/consignment_test.go"
-Task: "Tests in chaincode/conformity/correction_test.go"
-Task: "Tests in chaincode/conformity/documents_test.go"
-Task: "Tests in chaincode/conformity/split_test.go"
-Task: "Tests in chaincode/conformity/history_test.go"
+# همه آزمون‌های شکست‌خورده chaincode را با هم بنویسید:
+Task: "آزمون‌ها در chaincode/conformity/consignment_test.go"
+Task: "آزمون‌ها در chaincode/conformity/correction_test.go"
+Task: "آزمون‌ها در chaincode/conformity/documents_test.go"
+Task: "آزمون‌ها در chaincode/conformity/split_test.go"
+Task: "آزمون‌ها در chaincode/conformity/history_test.go"
 
-# Then independent implementation files:
-Task: "Implement AttachDocument, RecordDocumentRemoval, VerifyDocument in chaincode/conformity/documents.go"
-Task: "Implement GetHistory in chaincode/conformity/history.go"
-Task: "Implement document store in gateway/internal/store/documents.go"
+# سپس فایل‌های پیاده‌سازی مستقل:
+Task: "پیاده‌سازی AttachDocument، RecordDocumentRemoval، VerifyDocument در chaincode/conformity/documents.go"
+Task: "پیاده‌سازی GetHistory در chaincode/conformity/history.go"
+Task: "پیاده‌سازی مخزن اسناد در gateway/internal/store/documents.go"
 ```
 
 ---
 
-## Implementation Strategy
+## راهبرد پیاده‌سازی
 
-### MVP First (User Story 1 Only)
+### ابتدا MVP (فقط داستان کاربری 1)
 
-1. Phase 1 Setup → Phase 2 Foundational
-2. Phase 3 US1
-3. **STOP and VALIDATE**: quickstart Scenario 1 passes
-4. Demo tamper-proof registration to stakeholders
+1. فاز 1 راه‌اندازی → فاز 2 زیربنایی
+2. فاز 3 US1
+3. **توقف و اعتبارسنجی**: سناریوی 1 در quickstart قبول شود
+4. نمایش ثبت ضددست‌کاری به ذی‌نفعان
 
-### Incremental Delivery
+### تحویل تدریجی
 
-1. US1 → tamper-proof registry (MVP)
-2. US2 → automated verdicts
-3. US3 → legally usable decisions (minimum for go-live)
-4. US4 → accreditation-ready audit
-5. US5 → self-service rule management (seed script covers it until then)
+1. US1 → دفتر ثبت ضددست‌کاری (MVP)
+2. US2 → رأی‌های خودکار
+3. US3 → تصمیم‌های قابل استفاده از نظر حقوقی (حداقل لازم برای بهره‌برداری)
+4. US4 → ممیزی آماده اعتباربخشی
+5. US5 → مدیریت خودخدمت قواعد (تا آن زمان اسکریپت seed آن را پوشش می‌دهد)
 
-### Parallel Team Strategy
+### راهبرد تیم موازی
 
-1. Whole team: Setup + Foundational
-2. Then: Developer A on US1 → US2 → US3 chaincode; Developer B on gateway/web for the same
-   stories; Developer C on US5 and US4
+1. کل تیم: راه‌اندازی + زیربنایی
+2. سپس: توسعه‌دهنده A روی chaincode داستان‌های US1 → US2 → US3؛ توسعه‌دهنده B روی gateway/وب برای همان
+   داستان‌ها؛ توسعه‌دهنده C روی US5 و US4
 
 ---
 
-## Notes
+## یادداشت‌ها
 
-- [P] = different files, no dependency on unfinished tasks
-- Commit after each task or logical group
-- Any change to `chaincode/conformity/` needs two reviewers (constitution workflow gate)
+- [P] = فایل‌های متفاوت، بدون وابستگی به وظایف ناتمام
+- پس از هر وظیفه یا گروه منطقی commit کنید
+- هر تغییری در `chaincode/conformity/` به دو بازبین نیاز دارد (دروازه گردش کار منشور)
