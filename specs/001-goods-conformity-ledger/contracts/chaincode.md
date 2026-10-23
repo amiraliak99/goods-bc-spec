@@ -22,7 +22,7 @@ Inputs and outputs are JSON matching [data-model.md](../data-model.md).
 | `SubmitResults` | lab | batchId, TestResult[] | All-or-nothing; caller MSP = sample's assignedLabMsp; status → ResultsReceived |
 | `AssessConsignment` | assessor, service | consignmentId | Selects rule set by arrivalDate, writes Verdict; status → Assessed |
 | `RecordManualVerdict` | assessor | consignmentId, perTest[], justification | Verdict with `manual=true` |
-| `DecideConsignment` | assessor | Decision | `ERR_SOD` if caller submitted any result for it; override needs justification |
+| `DecideConsignment` | assessor | Decision + `documentChecks[] {documentId, sha256}` | `ERR_SOD` if caller submitted any result for it; override needs justification; any `documentChecks` hash differing from the on-chain one → `ERR_HASH_MISMATCH`; missing check for a non-removed document → `ERR_INVALID` |
 | `FileAppeal` | service (on behalf of the importer of record) | Appeal | Only importer of record; status → UnderAppeal |
 | `ResolveAppeal` | assessor (≠ original decider) | appealId, Decision(kind=appealOutcome) | Appeal resolved |
 | `ChooseDisposition` | inspector, assessor | Disposition (type) | Requires final NonConforming; status → DispositionPending |

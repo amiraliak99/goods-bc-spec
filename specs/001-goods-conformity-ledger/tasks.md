@@ -154,8 +154,8 @@ its own.
 - [ ] T065 [P] [US2] Implement `SubmitResults` in `chaincode/conformity/results.go`
 - [ ] T066 [US2] Implement pure `evaluate(ruleSet, results) Verdict` using `shopspring/decimal` and sorted iteration, plus `AssessConsignment` (roles `assessor`, `service`), `RecordManualVerdict`, `ReassessDryRun` in `chaincode/conformity/assess.go`
 - [ ] T067 [P] [US2] Implement CSV validation in `gateway/internal/resultsfile/validate.go`
-- [ ] T068 [US2] Implement endpoints `POST /consignments/{id}/samples`, `POST /results`, `POST /results/upload`, `POST /consignments/{id}/assess`, `POST /consignments/{id}/manual-verdict`, `POST /consignments/{id}/reassess` in `gateway/internal/api/results.go`; after a successful `SubmitResults`, call `AssessConsignment` with the gateway `service` identity
-- [ ] T069 [US2] Add projector handlers for `RecordSample`, `SubmitResults`, `AssessConsignment`, `RecordManualVerdict` writing `rm_consignment`/`rm_verdict` in `gateway/internal/projector/verdicts.go`
+- [ ] T068 [US2] Implement endpoints `POST /consignments/{id}/samples`, `POST /results`, `POST /results/upload`, `POST /consignments/{id}/assess`, `POST /consignments/{id}/manual-verdict`, `POST /consignments/{id}/reassess` in `gateway/internal/api/results.go`; no automatic assessment here (lab gateways have no `service` identity)
+- [ ] T069 [US2] Add projector handlers for `RecordSample`, `SubmitResults`, `AssessConsignment`, `RecordManualVerdict` writing `rm_consignment`/`rm_verdict` in `gateway/internal/projector/verdicts.go`; on a `SubmitResults` event, the StdOrg gateway's projector calls `AssessConsignment` with the StdOrg `service` identity (lab gateways skip this step)
 - [ ] T070 [P] [US2] Build lab pages `web/src/pages/lab/ResultsEntry.tsx` and `web/src/pages/lab/ResultsUpload.tsx` (per-row error table)
 - [ ] T071 [US2] Add sample recording to `web/src/pages/ConsignmentDetail.tsx` and verdict panel `web/src/components/VerdictPanel.tsx` (per-test outcome, measured vs limit, rule-set version, manual flag)
 
@@ -171,7 +171,7 @@ its own.
 
 ### Tests for User Story 3 ⚠️ (write first, must fail)
 
-- [ ] T072 [P] [US3] Tests in `chaincode/conformity/decision_test.go`: `DecideConsignment` by `assessor`; `override` without `justification` → `ERR_INVALID` ("max 2000 chars"); `certificateRef` "Required when outcome `Conforming`"; `rejectionReasons` "Required when outcome `NonConforming`"; caller who submitted any result for the consignment, or from the submitting lab MSP → `ERR_SOD`; automated verdict and override both remain in history
+- [ ] T072 [P] [US3] Tests in `chaincode/conformity/decision_test.go`: `DecideConsignment` by `assessor`; `override` without `justification` → `ERR_INVALID` ("max 2000 chars"); `certificateRef` "Required when outcome `Conforming`"; `rejectionReasons` "Required when outcome `NonConforming`"; caller who submitted any result for the consignment, or from the submitting lab MSP → `ERR_SOD`; automated verdict and override both remain in history; a `documentChecks` hash that differs from the on-chain `sha256` → `ERR_HASH_MISMATCH`, and a missing check for any non-removed document → `ERR_INVALID`
 - [ ] T073 [P] [US3] Tests in `chaincode/conformity/appeal_test.go`: `FileAppeal` only by `service` for the importer of record, `grounds` "max 2000 chars", status → `UnderAppeal`; `ResolveAppeal` by the original decider → `ERR_SOD`; resolution creates `appealOutcome` decision with `previousDecisionId`
 - [ ] T074 [P] [US3] Tests in `chaincode/conformity/disposition_test.go`: `ChooseDisposition` requires final `NonConforming`, `type` in `reExport`/`destruction`/`rework`, status → `DispositionPending`; `CompleteDisposition` by `inspector` with `evidenceDocumentIds` "≥ 1 on completion"; `rework` → `Sampling`, others → `Closed`
 - [ ] T075 [US3] Integration test for quickstart Scenario 3 in `tests/integration/us3_decisions_test.go`
@@ -182,7 +182,7 @@ its own.
 - [ ] T077 [P] [US3] Implement `FileAppeal`, `ResolveAppeal` in `chaincode/conformity/appeal.go`
 - [ ] T078 [P] [US3] Implement `ChooseDisposition`, `CompleteDisposition` in `chaincode/conformity/disposition.go`
 - [ ] T079 [P] [US3] Implement notifications (SMTP via `net/smtp` + `notification` table rows, fa/en templates) in `gateway/internal/notify/notify.go`
-- [ ] T080 [US3] Implement endpoints `POST /consignments/{id}/decisions`, `POST /consignments/{id}/appeals`, `POST /appeals/{id}/resolve`, `POST /consignments/{id}/dispositions`, `POST /dispositions/{id}/complete`, `GET /me/notifications` in `gateway/internal/api/decisions.go`; notify importer on final decision and appeal outcome
+- [ ] T080 [US3] Implement endpoints `POST /consignments/{id}/decisions`, `POST /consignments/{id}/appeals`, `POST /appeals/{id}/resolve`, `POST /consignments/{id}/dispositions`, `POST /dispositions/{id}/complete`, `GET /me/notifications` in `gateway/internal/api/decisions.go`; notify importer on final decision and appeal outcome; before calling `DecideConsignment`, recompute the SHA-256 of every non-removed document from `gateway/internal/store/documents.go` and pass them as `documentChecks`
 - [ ] T081 [US3] Add projector handlers for decisions, appeals, dispositions writing `rm_decision`/`rm_disposition` (including certificate ref index) in `gateway/internal/projector/decisions.go`
 - [ ] T082 [P] [US3] Build `web/src/pages/assessor/DecisionForm.tsx` (confirm/override, justification required for override) and `web/src/pages/inspector/Disposition.tsx`
 - [ ] T083 [P] [US3] Build importer portal pages `web/src/pages/importer/MyConsignments.tsx`, `web/src/pages/importer/Appeal.tsx`, `web/src/pages/importer/Notifications.tsx`
@@ -233,6 +233,8 @@ its own.
 - [ ] T099 Security hardening in `gateway/internal/api/router.go`: CSP and security headers, upload MIME sniffing against declared `kind`, request size limits (25 MB documents, 5 MB results files)
 - [ ] T100 [P] Load test behind build tag `load` in `tests/load/load_test.go`: 500 consignments/day profile with 50 concurrent users; assert 95% of verdicts within 1 minute of results submission (SC-002, SC-008)
 - [ ] T101 Run every quickstart.md scenario and `make test-chaincode test-integration test-web`; record results in `specs/001-goods-conformity-ledger/quickstart.md` notes
+- [ ] T102 Write `network/scripts/upgrade-chaincode.sh` (package new version, approve by every org, commit with the same endorsement policy, record version and approving MSPs in the release entry) and the upgrade procedure section in `README.md`; add integration test `tests/integration/upgrade_test.go` showing consignments, verdicts, and history registered under v1 are unchanged and readable after upgrading to v2
+- [ ] T103 [P] Add `CHANGELOG.md` with sections "Contract versions" and "Rule-set versions" (version, effective date, approvers) and a CI step in `.github/workflows/ci.yml` that fails when `chaincode/` or `testdata/rulesets/` changes without a `CHANGELOG.md` change
 
 ---
 

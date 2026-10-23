@@ -153,8 +153,8 @@ decisions still cite version 1 and new assessments after the effective date use 
 
 1. **Given** a draft rule set, **When** the same officer who drafted it tries to approve it,
    **Then** the system refuses.
-2. **Given** an approved new version with a future effective date, **When** an assessment
-   runs before that date, **Then** the previous version is applied.
+2. **Given** an approved new version with a future effective date, **When** a consignment
+   that arrived before that date is assessed, **Then** the previous version is applied.
 
 ---
 
